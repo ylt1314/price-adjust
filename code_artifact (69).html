@@ -1,0 +1,3979 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品适销价与决策分析系统</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS CDN (用于解析和导出Excel) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    /* 自定义美化滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* 浅色调商务对称线条背景纹理 */
+    .bg-line-grid-light {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08), transparent 75%),
+        linear-gradient(to right, rgba(203, 213, 225, 0.45) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(203, 213, 225, 0.45) 1px, transparent 1px);
+      background-size: 100% 100%, 48px 48px, 48px 48px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col relative">
+
+  <!-- ================= 浅色调·对称线条商务登录封面 ================= -->
+  <div id="loginCoverModal" class="fixed inset-0 z-50 flex items-center justify-center bg-line-grid-light p-4 transition-all duration-500">
+    <!-- 背景精密对称矢量线条艺术 (以 600, 400 为中心严格对称) -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+      <svg class="w-full max-w-7xl h-full opacity-60 text-indigo-500/70" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 主对称十字参考中轴线 -->
+        <line x1="600" y1="30" x2="600" y2="770" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.35"/>
+        <line x1="50" y1="400" x2="1150" y2="400" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.35"/>
+
+        <!-- 中心对称多层同心圆阶 -->
+        <circle cx="600" cy="400" r="140" stroke="currentColor" stroke-width="1" stroke-opacity="0.3"/>
+        <circle cx="600" cy="400" r="240" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 6" stroke-opacity="0.4"/>
+        <circle cx="600" cy="400" r="350" stroke="currentColor" stroke-width="0.8" stroke-opacity="0.25"/>
+        <circle cx="600" cy="400" r="480" stroke="currentColor" stroke-width="1" stroke-dasharray="8 8" stroke-opacity="0.2"/>
+
+        <!-- 轴对称对角射线与菱形轮廓 -->
+        <polygon points="600,160 920,400 600,640 280,400" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.35"/>
+        <polygon points="600,70 1050,400 600,730 150,400" stroke="currentColor" stroke-width="0.8" stroke-dasharray="6 6" stroke-opacity="0.25"/>
+        
+        <!-- 双向对称对角斜线 -->
+        <line x1="160" y1="107" x2="1040" y2="693" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" stroke-opacity="0.25"/>
+        <line x1="160" y1="693" x2="1040" y2="107" stroke="currentColor" stroke-width="0.75" stroke-dasharray="4 8" stroke-opacity="0.25"/>
+
+        <!-- 镜像对称正弦量利平衡波动线 (左右上下双重对称) -->
+        <path d="M 120 400 C 320 230, 440 570, 600 400 C 760 230, 880 570, 1080 400" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.35"/>
+        <path d="M 120 400 C 320 570, 440 230, 600 400 C 760 570, 880 230, 1080 400" stroke="currentColor" stroke-width="1.2" stroke-opacity="0.35"/>
+
+        <!-- 4角对称定位几何游标 -->
+        <g stroke="currentColor" stroke-width="1" stroke-opacity="0.4">
+          <!-- 左上角 -->
+          <path d="M 180 180 L 230 180 M 180 180 L 180 230"/>
+          <!-- 右上角 -->
+          <path d="M 1020 180 L 970 180 M 1020 180 L 1020 230"/>
+          <!-- 左下角 -->
+          <path d="M 180 620 L 230 620 M 180 620 L 180 570"/>
+          <!-- 右下角 -->
+          <path d="M 1020 620 L 970 620 M 1020 620 L 1020 570"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 浅色商务高光登录卡片 -->
+    <div class="relative w-full max-w-md bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-2xl p-8 shadow-2xl shadow-indigo-100/70 text-slate-800 z-10">
+      <div class="text-center mb-6">
+        <div class="inline-flex h-12 w-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 items-center justify-center text-white shadow-md shadow-indigo-200 mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">商品适销价与决策分析系统</h2>
+        <p class="text-xs text-slate-500 mt-1 font-mono tracking-wide">Merchandising Pricing & Sell-Through Decision Engine</p>
+      </div>
+
+      <form id="loginForm" class="space-y-4" onsubmit="event.preventDefault(); handleSystemLogin();">
+        <div>
+          <label for="loginAccountSelect" class="block text-xs font-semibold text-slate-600 mb-1">选择登录账号</label>
+          <div class="relative">
+            <select id="loginAccountSelect" class="w-full text-sm bg-slate-50/90 border border-slate-200 text-slate-800 rounded-xl py-2.5 px-3 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors font-medium">
+              <option value="10211">工号 10211 (商品总监)</option>
+              <option value="14599">工号 14599 (商品专员)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="loginPasswordInput" class="block text-xs font-semibold text-slate-600 mb-1">访问密码</label>
+          <div class="relative">
+            <input type="password" id="loginPasswordInput" placeholder="请输入对应访问密码" autocomplete="current-password" class="w-full text-sm bg-slate-50/90 border border-slate-200 text-slate-800 rounded-xl py-2.5 px-3 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
+          </div>
+          <div id="loginErrorMsg" class="text-xs text-rose-500 mt-1.5 hidden flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span id="loginErrorText">密码错误，请重新输入</span>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all duration-200 mt-2">
+          安全登录系统
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+        <span class="text-[11px] text-slate-400">企业级量利决策中枢 · 权限受控保护</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顶部导航栏 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-indigo-200 shadow-md">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">商品适销价与决策分析系统</h1>
+          <p class="text-xs text-slate-500 font-medium">零售价格弹性拟合 · 量利平衡最优化 · 企划倍率逆推</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="btnDownloadTemplate" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-300 flex items-center space-x-1" title="下载标准Excel模板文件">
+          <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>下载示例模板</span>
+        </button>
+        <button id="btnSampleData" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-300 flex items-center space-x-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>重置演示数据</span>
+        </button>
+        <label for="excelFileInput" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm cursor-pointer transition-colors flex items-center space-x-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <span>导入 Excel/CSV</span>
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" />
+        </label>
+        <button id="btnExportData" class="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors flex items-center space-x-1" title="导出筛选后的Excel表格 (含图片)">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>导出分析结果</span>
+        </button>
+        <button id="btnExportPDF" class="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors flex items-center space-x-1" title="导出横向排版PDF文档 (防截断)">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9h1m-1 4h6m-6 4h6"/></svg>
+          <span>导出 PDF (横向)</span>
+        </button>
+        
+        <!-- 用户登录状态徽标与退出 -->
+        <div class="h-6 w-px bg-slate-200 mx-1"></div>
+        <div class="flex items-center space-x-2 pl-1">
+          <span class="text-xs font-semibold text-slate-700 px-2 py-1 bg-slate-100 rounded-md border border-slate-200 flex items-center space-x-1">
+            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+            <span id="currentLoggedUserBadge">10211 (商品总监)</span>
+          </span>
+          <button id="btnLogout" class="text-xs text-slate-400 hover:text-slate-600 transition-colors" title="退出登录">
+            退出
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 消息提示 Toast -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 opacity-0 pointer-events-none translate-y-3 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg flex items-center space-x-2">
+    <span id="toastIcon" class="text-emerald-400">●</span>
+    <span id="toastMsg">通知信息</span>
+  </div>
+
+  <!-- 大数据极速解析中 Loading 遮罩 -->
+  <div id="dataLoadingOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs transition-opacity duration-200 hidden opacity-0">
+    <div class="bg-white rounded-2xl p-6 shadow-2xl border border-slate-200 max-w-sm w-full mx-4 text-center">
+      <div class="inline-flex h-12 w-12 rounded-xl bg-indigo-50 items-center justify-center text-indigo-600 mb-3 animate-spin">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+      </div>
+      <h3 class="text-sm font-bold text-slate-800">正在极速解析数十万级数据...</h3>
+      <p id="loadingOverlayDetail" class="text-xs text-slate-400 mt-1">启用预编译列索引与单遍聚合引擎，秒级加载中</p>
+    </div>
+  </div>
+
+  <!-- 主体工作区 (全面升级为水平横向宽屏布局) -->
+  <main class="max-w-[1920px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4 flex-1">
+
+    <!-- 全局筛选与核心商品控制卡片 (横向通栏工作带) -->
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- 左侧：货号选择与主图预览 -->
+        <div class="flex items-center space-x-4">
+          <div class="relative w-14 h-14 rounded-xl border border-slate-200 overflow-hidden bg-slate-100 flex-shrink-0 group">
+            <img id="skuImage" src="" alt="商品图片" class="w-full h-full object-cover transition-transform group-hover:scale-105" onerror="this.src='https://placehold.co/120x120/e2e8f0/64748b?text=SKU+Img'"/>
+            <span id="skuBadge" class="absolute bottom-0 inset-x-0 bg-slate-900/70 text-[9px] text-white text-center py-0.5 font-mono">货号</span>
+          </div>
+          <div class="relative">
+            <div class="flex items-center space-x-2">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">分析货号</label>
+              <span id="skuNameTag" class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">极光鹅绒服系列</span>
+            </div>
+            <!-- 可模糊搜索输入与下拉选择组合框 -->
+            <div class="relative mt-1 w-56">
+              <input type="text" id="skuComboboxInput" placeholder="输入或下拉选择货号..." autocomplete="off" class="w-full text-xs font-semibold rounded-lg border border-slate-300 bg-white py-1.5 pl-2.5 pr-7 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-slate-800">
+              <button type="button" id="skuComboboxToggle" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 p-0.5">
+                <svg id="skuComboboxArrow" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div id="skuComboboxMenu" class="hidden absolute left-0 top-full mt-1 w-64 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-1 space-y-0.5">
+                <!-- 动态填充搜索过滤结果 -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中间：店铺归类切片器 (取值改自销售数据表的店铺归类) -->
+        <div class="flex-1 max-w-xs">
+          <label for="storeCategoryFilter" class="block text-xs font-semibold text-slate-600 mb-1 flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span>店铺归类维度</span>
+          </label>
+          <select id="storeCategoryFilter" class="w-full text-xs font-medium rounded-lg border-slate-300 bg-slate-50 py-1.5 px-2.5 focus:bg-white focus:border-indigo-500 focus:outline-none transition-colors shadow-2xs text-slate-800">
+            <option value="ALL">全部店铺归类 (全渠道汇总)</option>
+          </select>
+        </div>
+
+        <!-- 右侧：商品基础成本与标价指示 -->
+        <div class="flex items-center space-x-4 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
+          <div class="text-right">
+            <span class="text-xs text-slate-400 block font-medium">基准单位成本 (C)</span>
+            <div class="flex items-baseline justify-end space-x-1">
+              <span class="text-xs text-slate-500">¥</span>
+              <span id="txtCost" class="text-lg font-bold text-slate-800">0.00</span>
+            </div>
+          </div>
+          <div class="h-8 w-px bg-slate-200"></div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400 block font-medium">当前加权均价 (P)</span>
+            <div class="flex items-baseline justify-end space-x-1">
+              <span class="text-xs text-slate-500">¥</span>
+              <span id="txtCurrentAvgPrice" class="text-lg font-bold text-slate-800">0.00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 中部横向并列区域：渠道归类表现 (左) + 价格带量利分布图表 (右) -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+      
+      <!-- 左侧：渠道归类销售表现透视 (占 5/12 宽度，受日期切片器联动控制) -->
+      <div class="xl:col-span-5 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
+            <h3 class="text-xs font-bold text-slate-800">不同渠道表现 (按店铺归类聚合)</h3>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[11px] text-slate-400 font-mono" id="channelDateRangeTag">--</span>
+            <select id="channelSkuScopeSelect" class="text-[11px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-700 font-medium focus:outline-none focus:border-indigo-500">
+              <option value="CURRENT">当前分析款</option>
+              <option value="ALL">全款汇总</option>
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto flex-1 flex flex-col justify-center">
+          <table class="w-full text-xs text-center">
+            <thead class="bg-slate-50 text-[11px] text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="py-2 px-1 text-center">渠道归类</th>
+                <th class="py-2 px-1 text-center">销量 (件)</th>
+                <th class="py-2 px-1 text-center">销量占比</th>
+                <th class="py-2 px-1 text-center">销额 (万)</th>
+                <th class="py-2 px-1 text-center">销额占比</th>
+                <th class="py-2 px-1 text-center">件单价</th>
+                <th class="py-2 px-1 text-center">倍率</th>
+              </tr>
+            </thead>
+            <tbody id="channelPerfTableBody" class="divide-y divide-slate-100 font-mono text-slate-700">
+              <!-- 动态填充渠道归类数据 -->
+            </tbody>
+            <tfoot id="channelPerfTableFoot" class="bg-slate-50 font-bold border-t border-slate-200 text-slate-800 font-mono text-[11px]">
+              <!-- 渠道汇总行 -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 右侧：价格带离散汇总透视 (占 7/12 宽度，与左侧自适应等高) -->
+      <div class="xl:col-span-7 bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800">价格带 (Price Band) 销量与倍率分布</h2>
+            <p class="text-xs text-slate-400 mt-0.5">柱状: 各价格段销量 (件) | 折线: 实际变现倍率 (x)</p>
+          </div>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="priceBandStepLabel">区间步长: 自动</span>
+        </div>
+        <div class="relative flex-1 min-h-[220px]">
+          <canvas id="chartPriceBands"></canvas>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+          <span>核心主力走量价格带</span>
+          <span class="font-bold text-indigo-700 text-xs" id="dominantBandLabel">--</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 全品类商品适销与倍率决策矩阵 (宽屏横向延展) -->
+    <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col space-y-4">
+      
+      <!-- 标题与多货号批量筛选栏 -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+            <span>全货号适销与倍率决策矩阵</span>
+            <span id="filteredSkuCountBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">共 0 款</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">多货号粘贴批量筛选 · 日期联动 · 目标倍率滑动条调节 · 7维智能排序 · 周期环比透视</p>
+        </div>
+
+        <!-- 过滤控制组：日期筛选 + 排序下拉 + 多货号粘贴控件 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- 日期筛选：开始日期与结束日期联动控件 -->
+          <div class="flex items-center space-x-1.5 bg-slate-50 py-1 px-2.5 rounded-lg border border-slate-200">
+            <span class="text-xs font-medium text-slate-500">日期范围:</span>
+            <input type="date" id="startDateInput" class="text-xs bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-500 font-mono shadow-2xs">
+            <span class="text-xs text-slate-400">至</span>
+            <input type="date" id="endDateInput" class="text-xs bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-700 focus:outline-none focus:border-indigo-500 font-mono shadow-2xs">
+            <button id="btnResetDates" title="重置回完整日期范围" class="text-slate-400 hover:text-indigo-600 text-xs px-1 font-bold">↺</button>
+          </div>
+
+          <!-- 总库存条件筛选控件 (支持 ≥, >, ≤, < 及输入框) -->
+          <div class="flex items-center space-x-1 bg-slate-50 py-1 px-2 rounded-lg border border-slate-200">
+            <span class="text-xs font-medium text-slate-500">总库存:</span>
+            <select id="invFilterOperator" class="text-xs bg-white border border-slate-200 rounded px-1 py-1 text-slate-700 font-medium focus:outline-none focus:border-indigo-500">
+              <option value="gte">≥</option>
+              <option value="gt">&gt;</option>
+              <option value="lte">≤</option>
+              <option value="lt">&lt;</option>
+            </select>
+            <div class="relative flex items-center">
+              <input type="number" id="invFilterValue" placeholder="如: 100" class="text-xs bg-white border border-slate-200 rounded px-1.5 py-1 w-20 text-slate-700 font-mono focus:outline-none focus:border-indigo-500 shadow-2xs">
+              <button id="btnClearInvFilter" title="清空库存过滤" class="absolute right-1 text-slate-400 hover:text-slate-600 text-[10px] hidden">✕</button>
+            </div>
+          </div>
+
+          <!-- 排序下拉按钮 -->
+          <div class="flex items-center space-x-1">
+            <label for="matrixSortSelect" class="text-xs font-medium text-slate-500">排序:</label>
+            <select id="matrixSortSelect" class="text-xs rounded-lg border-slate-200 bg-slate-50 py-1.5 px-2.5 focus:bg-white focus:border-indigo-500 focus:outline-none transition-colors font-medium text-indigo-700">
+              <option value="default">默认排序</option>
+              <option value="sellThroughAsc">售罄率从低到高 ↑</option>
+              <option value="sellThroughDesc">售罄率从高到低 ↓</option>
+              <option value="inventoryDesc">总库存从大到小 ↓</option>
+              <option value="sales7dDesc">近7天销量最好 ↓</option>
+              <option value="sales7dAsc">近7天销量最弱 ↑</option>
+              <option value="sales30dDesc">近30天销量最好 ↓</option>
+              <option value="sales30dAsc">近30天销量最弱 ↑</option>
+            </select>
+          </div>
+
+          <!-- 多货号粘贴筛选控件 -->
+          <div class="relative flex items-center">
+            <input type="text" id="skuMultiPasteInput" placeholder="粘贴多个货号 (空格/逗号/换行)" class="text-xs rounded-lg border-slate-200 bg-slate-50 py-1.5 px-2.5 w-52 sm:w-64 focus:bg-white focus:border-indigo-500 focus:outline-none transition-colors">
+            <button id="btnClearSkuPaste" title="清空货号过滤" class="absolute right-2 text-slate-400 hover:text-slate-600 text-xs hidden">✕</button>
+          </div>
+          <button id="btnApplySkuPaste" class="px-2.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
+            筛选
+          </button>
+        </div>
+      </div>
+
+      <!-- 5大维度多选下拉筛选区 -->
+      <div class="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+            <span>多维属性筛选 (多选下拉)</span>
+          </span>
+          <button id="btnResetMultiFilters" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium hover:underline flex items-center space-x-1 hidden">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>重置5维筛选</span>
+          </button>
+        </div>
+        <div id="multiFilterDropdownsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          <!-- 动态渲染 5 大维度多选下拉框 -->
+        </div>
+      </div>
+
+      <!-- 测算目标倍率滑动条与自定义输入主控条 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/80">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-bold text-indigo-900 flex items-center space-x-1.5">
+            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            <span>测算目标倍率主控:</span>
+          </span>
+          <span class="text-xs text-indigo-600 font-medium font-mono"><span id="activeMarkupDisplay" class="text-sm font-extrabold text-indigo-700">2.40</span>x</span>
+          <span class="text-[11px] text-slate-400">(拖动滑动条统一部署，单款亦可在表格内独立微调)</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <input type="range" id="targetMarkupSlider" min="1.0" max="6.0" step="0.05" value="2.4" class="w-36 sm:w-48 h-1.5 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+          <div class="flex items-center space-x-1">
+            <span class="text-xs text-slate-500 font-medium">自定义:</span>
+            <input type="number" id="customMarkupInput" min="1.0" max="15.0" step="0.05" value="2.40" class="w-20 px-2 py-1 text-xs font-bold text-indigo-700 bg-white border border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500 font-mono shadow-2xs text-center">
+            <span class="text-xs text-slate-500 font-bold">x</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表格容器 (调整列宽更紧凑，全面居中排版) -->
+      <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-[640px] overflow-y-auto relative shadow-2xs">
+        <table class="w-full text-sm text-slate-700 min-w-[1520px]">
+          <thead class="bg-slate-100 text-xs font-extrabold text-slate-900 uppercase border-b-2 border-slate-300 sticky top-0 z-20 shadow-xs select-none">
+            <tr>
+              <th class="matrix-sortable-th py-3 px-2 text-center w-28 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="sku">
+                <span>货号</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="py-3 px-2 text-center w-28 bg-slate-100 sticky top-0 cursor-default">
+                <span>商品图片</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-24 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="totalSales">
+                <span>累计销量</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-24 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="sales7d">
+                <span>近7天销量</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="py-3 px-1.5 text-center w-24 bg-slate-100 sticky top-0 cursor-default">
+                <span>近7天趋势</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="wow7d">
+                <span>7天环比</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-24 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="sales30d">
+                <span>近30天销量</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="py-3 px-1.5 text-center w-28 bg-slate-100 sticky top-0 cursor-default">
+                <span>近30天趋势</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="mom30d">
+                <span>30天环比</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="inWarehouse">
+                <span>在仓库存</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="inTransit">
+                <span>在途库存</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-22 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="totalInventory">
+                <span>总库存</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-22 text-emerald-700 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="sellThroughRate">
+                <span>售罄率</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="cost">
+                <span>成本 (C)</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-22 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="currentAvgPrice">
+                <span>当前均价</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-1.5 text-center w-20 bg-slate-100 sticky top-0 cursor-pointer hover:bg-slate-200 transition-colors" data-sort-key="currentMarkup">
+                <span>当前倍率</span><span class="sort-indicator ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-2 text-center w-24 text-indigo-900 bg-indigo-50/90 sticky top-0 cursor-pointer hover:bg-indigo-100 transition-colors" data-sort-key="targetMarkup">
+                <span>目标倍率</span><span class="sort-indicator ml-1 text-indigo-500 font-mono text-[10px]">⇅</span>
+              </th>
+              <th class="matrix-sortable-th py-3 px-2 text-center w-24 text-indigo-900 bg-indigo-50/90 sticky top-0 cursor-pointer hover:bg-indigo-100 transition-colors" data-sort-key="targetPrice">
+                <span>对应价格</span><span class="sort-indicator ml-1 text-indigo-500 font-mono text-[10px]">⇅</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="matrixTableBody" class="divide-y divide-slate-100 font-normal">
+            <!-- 动态填充数据行 -->
+          </tbody>
+          <tfoot id="matrixTableFoot" class="bg-slate-100/90 font-bold border-t-2 border-slate-300 text-slate-900 text-xs sm:text-[13px] sticky bottom-0 z-10 shadow-xs backdrop-blur-xs">
+            <!-- 动态填充总计汇总行 -->
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- 分页控制栏组件 -->
+      <div id="matrixPaginationBar" class="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-3 gap-3">
+        <div class="flex items-center space-x-3 text-xs text-slate-500">
+          <span id="paginationInfo">显示第 0 到 0 款，共 0 款</span>
+          <div class="flex items-center space-x-1">
+            <span>每页:</span>
+            <select id="matrixPageSizeSelect" class="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:border-indigo-500">
+              <option value="10">10 款/页</option>
+              <option value="15" selected>15 款/页</option>
+              <option value="25">25 款/页</option>
+              <option value="50">50 款/页</option>
+              <option value="100">100 款/页</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-1" id="paginationControls">
+          <button id="btnFirstPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">首页</button>
+          <button id="btnPrevPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">上一页</button>
+          <div id="paginationPageNumbers" class="flex items-center space-x-1">
+            <!-- 动态数字页码按钮 -->
+          </div>
+          <button id="btnNextPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">下一页</button>
+          <button id="btnLastPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">末页</button>
+        </div>
+      </div>
+
+      <div class="pt-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
+        <span>* 售罄率 = 累计销量 / (总库存 + 累计销量)。环比增长显示蓝色、下滑显示红色。单款目标倍率与价格支持直接输入编辑，不影响其他款。</span>
+      </div>
+    </div>
+
+    <!-- 新增模块：全货号适销大图展示模式 (视觉陈列与分页透视) -->
+    <div id="galleryModuleCard" class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col space-y-4">
+      
+      <!-- 模块头部 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+            <span>全货号适销大图展示模式</span>
+            <span id="gallerySkuCountBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">共 0 款</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">大图视觉陈列 · 核心量利透视 · 售罄进度监控 · 目标倍率联动微调 (同步受上方筛选与排序控制)</p>
+        </div>
+
+        <div class="flex items-center space-x-3 text-xs text-slate-400 font-medium">
+          <span class="flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <span>点击图片放大预览 · 点击货号查看趋势</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 大图卡片网格容器 -->
+      <div id="galleryCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <!-- 动态生成大图商品卡片 -->
+      </div>
+
+      <!-- 大图展示模块独立分页控制栏 -->
+      <div id="galleryPaginationBar" class="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 pt-3 gap-3">
+        <div class="flex items-center space-x-3 text-xs text-slate-500">
+          <span id="galleryPaginationInfo">显示第 0 到 0 款，共 0 款</span>
+          <div class="flex items-center space-x-1">
+            <span>每页:</span>
+            <select id="galleryPageSizeSelect" class="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:border-indigo-500">
+              <option value="10" selected>10 款/页</option>
+              <option value="15">15 款/页</option>
+              <option value="20">20 款/页</option>
+              <option value="30">30 款/页</option>
+              <option value="50">50 款/页</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-1" id="galleryPaginationControls">
+          <button id="btnGalleryFirstPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">首页</button>
+          <button id="btnGalleryPrevPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">上一页</button>
+          <div id="galleryPaginationPageNumbers" class="flex items-center space-x-1">
+            <!-- 动态数字页码按钮 -->
+          </div>
+          <button id="btnGalleryNextPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">下一页</button>
+          <button id="btnGalleryLastPage" class="px-2 py-1 text-xs border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed">末页</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 货号近期量价走势弹窗 Modal (扩宽为 max-w-5xl lg:max-w-6xl) -->
+  <div id="skuTrendModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl lg:max-w-6xl w-full p-6 max-h-[92vh] overflow-y-auto transform scale-95 transition-transform duration-200" id="skuTrendModalCard">
+      <!-- 弹窗头部 -->
+      <div class="flex items-start justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center space-x-3">
+          <img id="modalSkuImg" src="" alt="缩略图" class="w-14 h-14 rounded-xl object-cover border border-slate-200 shadow-2xs">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 id="modalSkuTitle" class="text-base font-bold text-slate-900">货号趋势</h3>
+              <span id="modalSkuBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium">--</span>
+            </div>
+            <p id="modalSkuSubtitle" class="text-xs text-slate-400 mt-0.5">--</p>
+          </div>
+        </div>
+        <button id="btnCloseSkuTrendModal" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- 弹窗统计卡片 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4">
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 block font-medium">累计销量 / 销额</span>
+          <span id="modalStatSalesRev" class="text-xs font-bold text-slate-800">--</span>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 block font-medium">加权均价 / 当前倍率</span>
+          <span id="modalStatPriceMarkup" class="text-xs font-bold text-slate-800">--</span>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 block font-medium">总库存 (在仓/在途)</span>
+          <span id="modalStatInventory" class="text-xs font-bold text-slate-800">--</span>
+        </div>
+        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <span class="text-[10px] text-slate-400 block font-medium">当前综合售罄率</span>
+          <span id="modalStatSellThrough" class="text-xs font-bold text-emerald-600">--</span>
+        </div>
+      </div>
+
+      <!-- 周度走势图表 (高度适配更宽阔视觉，带数据标签) -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700">周度销量与价格波动曲线 (按自然周聚合 · 带数值标签)</span>
+          <span class="text-[11px] text-slate-400">柱状: 周销量(件) | 折线: 周均成交价(¥)</span>
+        </div>
+        <div class="relative h-72 w-full bg-slate-50/50 rounded-xl p-2.5 border border-slate-100">
+          <canvas id="chartSkuTrend"></canvas>
+        </div>
+      </div>
+
+      <!-- 渠道归类销量与成交均价结构表 -->
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <span>渠道归类表现 (各渠道销量与成交均价)</span>
+          </span>
+          <span class="text-[11px] text-slate-400">当前筛选周期内核算</span>
+        </div>
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-50 text-[11px] text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="py-2.5 px-3">渠道归类</th>
+                <th class="py-2.5 px-3 text-right">销量 (件)</th>
+                <th class="py-2.5 px-3 text-right">销量占比</th>
+                <th class="py-2.5 px-3 text-right">销额 (万元)</th>
+                <th class="py-2.5 px-3 text-right font-bold text-indigo-700">成交均价</th>
+                <th class="py-2.5 px-3 text-right">变现倍率</th>
+              </tr>
+            </thead>
+            <tbody id="modalChannelTableBody" class="divide-y divide-slate-100 font-mono">
+              <!-- 动态填充渠道数据行 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 弹窗底部操作 -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+        <button id="btnSetAsMainSku" class="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+          设为上方主分析货号
+        </button>
+        <button id="btnCloseModalBottom" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 图片高清大图放大预览 Modal (Lightbox) -->
+  <div id="imagePreviewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs p-4 opacity-0 pointer-events-none transition-all duration-200">
+    <div class="relative max-w-xl max-h-[90vh] bg-white rounded-2xl shadow-2xl p-3 flex flex-col items-center transform scale-95 transition-all duration-200" id="imagePreviewCard">
+      <button id="btnCloseImagePreview" class="absolute -top-3 -right-3 bg-white text-slate-700 hover:text-slate-900 w-8 h-8 rounded-full shadow-lg flex items-center justify-center border border-slate-200 hover:bg-slate-50 transition-colors z-10" title="关闭大图预览 (Esc)">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <div class="w-full overflow-hidden rounded-xl bg-slate-50 flex items-center justify-center max-h-[75vh]">
+        <img id="imagePreviewImg" src="" alt="商品高清大图" class="w-full h-auto max-h-[75vh] object-contain rounded-xl">
+      </div>
+      <div class="mt-3 flex items-center justify-between w-full px-2 text-xs">
+        <div>
+          <span class="font-bold text-slate-800 text-sm font-mono" id="imagePreviewSku">--</span>
+          <span class="text-slate-500 ml-2" id="imagePreviewDesc"></span>
+        </div>
+        <span class="text-[11px] text-slate-400">点击背景或右上角关闭</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-slate-200 mt-auto">
+    <div class="max-w-[1920px] w-full mx-auto px-4 py-3 text-center text-xs text-slate-400">
+      商品适销价与需求价格弹性决策引擎 · 支持 Log-Log 幂函数常弹性理论与二次毛利曲线极值求解
+    </div>
+  </footer>
+
+  <!-- 核心逻辑与数学运算模块 -->
+  <script>
+    // -------------------------------------------------------------
+    // 1. 全局数据状态与模型变量
+    // -------------------------------------------------------------
+    let rawDataset = [];
+    let inventoryMap = {};
+    let currentSku = 'DWN-801';
+    let currentStoreCategory = 'ALL';
+    let channelSkuScope = 'CURRENT';
+    let selectedTargetMarkup = 2.4; // 默认倍率设置为 2.4
+    let startDateFilter = '';
+    let endDateFilter = '';
+    let currentSortMode = 'default';
+
+    // 表头自主排序状态
+    let matrixSortColumn = '';
+    let matrixSortOrder = 'desc'; // 'asc' 或 'desc'
+
+    // 分页状态管理
+    let matrixCurrentPage = 1;
+    let matrixPageSize = 15;
+
+    // 大图展示模式分页状态
+    let galleryCurrentPage = 1;
+    let galleryPageSize = 10;
+
+    // 总库存条件筛选状态
+    let invFilterOp = 'gte';
+    let invFilterVal = null;
+
+    // 单款独立微调覆盖字典 (sku -> markup)，未单独修改的款继承 selectedTargetMarkup
+    const skuCustomMarkupMap = {};
+
+    // 登录凭证配置 (账号: 密码映射，支持 10211/14599 及对应密码)
+    const VALID_CREDENTIALS = {
+      '10211': ['abc@14599', '888888'],
+      '14599': ['888888', 'abc@14599']
+    };
+    const USER_ROLE_MAP = {
+      '10211': '商品总监',
+      '14599': '商品专员'
+    };
+    let activeLoggedInUser = '10211';
+
+    // 矩阵筛选条件状态
+    let filterPastedSkus = [];
+    const filterSelectedStoreCats = new Set();
+    const filterSelectedStatuses = new Set();
+    const filterSelectedYears = new Set();
+    const filterSelectedSeasons = new Set();
+    const filterSelectedCategories = new Set();
+
+    // 图表实例
+    let chartPriceBandsInstance = null;
+    let chartSkuTrendInstance = null;
+
+    // 辅助函数：生成精巧高清的纯 SVG 折线面积趋势图 (Sparkline)
+    function generateSparklineSVG(data, width = 82, height = 30, color = '#6366f1') {
+      if (!data || data.length === 0) return '<span class="text-slate-300 text-xs">-</span>';
+      let max = -Infinity;
+      let min = Infinity;
+      for (let i = 0; i < data.length; i++) {
+        if (data[i] > max) max = data[i];
+        if (data[i] < min) min = data[i];
+      }
+      if (max === -Infinity) max = 1;
+      if (min === Infinity) min = 0;
+      const range = (max - min) || 1;
+
+      const px = 4;
+      const py = 4;
+      const innerW = width - px * 2;
+      const innerH = height - py * 2;
+
+      const pts = data.map((val, i) => {
+        const x = px + (i / (data.length - 1)) * innerW;
+        const y = height - py - ((val - min) / range) * innerH;
+        return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), val };
+      });
+
+      const pathD = pts.reduce((acc, p, idx) => `${acc} ${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`, '');
+      const first = pts[0];
+      const last = pts[pts.length - 1];
+      const areaD = `${pathD} L ${last.x} ${height} L ${first.x} ${height} Z`;
+
+      const gradId = 'spk_' + Math.random().toString(36).slice(2, 7);
+
+      return `
+        <div class="inline-flex items-center justify-center" title="区间销量波动: ${data.join(' → ')} 件">
+          <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="overflow-visible inline-block">
+            <defs>
+              <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="${color}" stop-opacity="0.02" />
+              </linearGradient>
+            </defs>
+            <path d="${areaD}" fill="url(#${gradId})" />
+            <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="${last.x}" cy="${last.y}" r="2.5" fill="${color}" stroke="#ffffff" stroke-width="1" />
+          </svg>
+        </div>
+      `;
+    }
+
+    // 登录处理逻辑
+    function handleSystemLogin() {
+      const account = document.getElementById('loginAccountSelect').value;
+      const pwd = document.getElementById('loginPasswordInput').value.trim();
+      const errBox = document.getElementById('loginErrorMsg');
+      const errText = document.getElementById('loginErrorText');
+
+      if (!VALID_CREDENTIALS[account] || !VALID_CREDENTIALS[account].includes(pwd)) {
+        errBox.classList.remove('hidden');
+        errText.innerText = '访问密码不正确，请重新输入';
+        const modal = document.querySelector('#loginCoverModal > div');
+        modal.classList.add('ring-2', 'ring-rose-500');
+        setTimeout(() => modal.classList.remove('ring-2', 'ring-rose-500'), 600);
+        return;
+      }
+
+      errBox.classList.add('hidden');
+      activeLoggedInUser = account;
+      const roleName = USER_ROLE_MAP[account] || '商品决策人';
+      document.getElementById('currentLoggedUserBadge').innerText = `${account} (${roleName})`;
+
+      // 平滑隐藏登录页
+      const cover = document.getElementById('loginCoverModal');
+      cover.classList.add('opacity-0', 'pointer-events-none');
+      showToast(`欢迎回来，${roleName} (工号 ${account})！`);
+    }
+
+    function handleSystemLogout() {
+      const cover = document.getElementById('loginCoverModal');
+      document.getElementById('loginPasswordInput').value = '';
+      cover.classList.remove('opacity-0', 'pointer-events-none');
+      showToast('已安全退出登录');
+    }
+
+    // -------------------------------------------------------------
+    // 2. 初始预设演示数据集生成 (包含完整销售记录与库存数据)
+    // -------------------------------------------------------------
+    function initDataFromPreset() {
+      inventoryMap = {
+        'DWN-801': { inWarehouse: 1420, inTransit: 380, total: 1800 },
+        'CT-502':  { inWarehouse: 850,  inTransit: 210, total: 1060 },
+        'SW-303':  { inWarehouse: 2600, inTransit: 600, total: 3200 },
+        'JK-405':  { inWarehouse: 460,  inTransit: 140, total: 600 },
+        'DR-201':  { inWarehouse: 1950, inTransit: 450, total: 2400 }
+      };
+
+      const skuProfiles = [
+        {
+          sku: 'DWN-801',
+          name: '极光高蓬鹅绒服',
+          category: '羽绒服',
+          year: '2025',
+          season: '冬季',
+          status: '正价',
+          cost: 180.0,
+          img: 'https://images.unsplash.com/photo-1544923246-77307dd654cb?w=300&q=80',
+          basePrice: 529,
+          elasticityParam: 1.85
+        },
+        {
+          sku: 'CT-502',
+          name: '双面呢羊绒大衣',
+          category: '大衣',
+          year: '2025',
+          season: '秋冬',
+          status: '正价',
+          cost: 260.0,
+          img: 'https://images.unsplash.com/photo-1539533018447-63fcce667883?w=300&q=80',
+          basePrice: 799,
+          elasticityParam: 1.62
+        },
+        {
+          sku: 'SW-303',
+          name: '美利奴圆领针织衫',
+          category: '针织衫',
+          year: '2025',
+          season: '秋季',
+          status: '平销',
+          cost: 65.0,
+          img: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300&q=80',
+          basePrice: 199,
+          elasticityParam: 2.15
+        },
+        {
+          sku: 'JK-405',
+          name: '经典通勤西服外套',
+          category: '外套',
+          year: '2025',
+          season: '春秋',
+          status: '正价',
+          cost: 110.0,
+          img: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=300&q=80',
+          basePrice: 349,
+          elasticityParam: 1.45
+        },
+        {
+          sku: 'DR-201',
+          name: '法式复古高腰连衣裙',
+          category: '连衣裙',
+          year: '2025',
+          season: '夏季',
+          status: '季末出清',
+          cost: 75.0,
+          img: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&q=80',
+          basePrice: 169,
+          elasticityParam: 2.40
+        }
+      ];
+
+      const stores = [
+        { name: '天猫官方旗舰店', cat: '电商线上' },
+        { name: '京东自营旗舰店', cat: '电商线上' },
+        { name: '抖音品牌直播间', cat: '社交电商' },
+        { name: '华东直营旗舰店', cat: '线下正价店' },
+        { name: '华北万象体验店', cat: '线下正价店' }
+      ];
+
+      const generated = [];
+      const baseDate = new Date('2026-10-28'); // 以近期真实日期生成
+
+      skuProfiles.forEach(prof => {
+        // 生成近 60 天的日级/多周期数据
+        for (let d = 59; d >= 0; d--) {
+          const dt = new Date(baseDate);
+          dt.setDate(dt.getDate() - d);
+          const dateStr = dt.toISOString().slice(0, 10);
+
+          stores.forEach((st, sIdx) => {
+            // 每3天或特定活动周期产生记录
+            if ((d + sIdx) % 2 === 0) {
+              const priceFactor = 0.84 + ((d * 3 + sIdx * 5) % 8) * 0.04;
+              const unitPrice = Math.round(prof.basePrice * priceFactor);
+              const baseDemand = 75000 * Math.pow(unitPrice, -prof.elasticityParam);
+              const noise = 0.85 + (((d * 11 + sIdx * 13) % 29) / 100);
+              const channelWeight = st.cat === '电商线上' ? 1.3 : (st.cat === '社交电商' ? 1.1 : 0.85);
+              const sales = Math.max(5, Math.round(baseDemand * noise * channelWeight * 0.15));
+              const revenue = Math.round(sales * unitPrice);
+              const markup = prof.cost > 0 ? (unitPrice / prof.cost) : 1.0;
+
+              generated.push({
+                sku: prof.sku,
+                store: st.name,
+                storeCategory: st.cat,
+                date: dateStr,
+                sales,
+                revenue,
+                img: prof.img,
+                year: prof.year,
+                season: prof.season,
+                category: prof.category,
+                cost: prof.cost,
+                status: prof.status,
+                price: unitPrice,
+                markup: Number(markup.toFixed(2))
+              });
+            }
+          });
+        }
+      });
+
+      rawDataset = generated;
+    }
+
+    // 辅助函数：根据全局日期筛选器过滤数据
+    function getFilteredDataByDate(records) {
+      if (!records || records.length === 0) return records;
+      if (!startDateFilter && !endDateFilter) return records;
+      let filtered = [];
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        if (startDateFilter && r.date < startDateFilter) continue;
+        if (endDateFilter && r.date > endDateFilter) continue;
+        filtered.push(r);
+      }
+      return filtered;
+    }
+
+    // 初始化日期选择器极值与默认值 (单遍 O(N) 扫描，避免大数组 sort)
+    function initDatePickers(dataset) {
+      if (!dataset || dataset.length === 0) return;
+      let minD = '';
+      let maxD = '';
+      for (let i = 0; i < dataset.length; i++) {
+        const d = dataset[i].date;
+        if (!d) continue;
+        if (!minD || d < minD) minD = d;
+        if (!maxD || d > maxD) maxD = d;
+      }
+
+      if (minD && maxD) {
+        startDateFilter = minD;
+        endDateFilter = maxD;
+
+        const sInput = document.getElementById('startDateInput');
+        const eInput = document.getElementById('endDateInput');
+        if (sInput && eInput) {
+          sInput.value = minD;
+          eInput.value = maxD;
+          sInput.min = minD;
+          sInput.max = maxD;
+          eInput.min = minD;
+          eInput.max = maxD;
+        }
+      }
+    }
+
+    // 核心数据处理管线：提取完全受到筛选器与排序控制的矩阵数据集
+    function getFilteredMatrixRows() {
+      if (!rawDataset || rawDataset.length === 0) return [];
+
+      let globalMaxTime = 0;
+      if (endDateFilter) {
+        const t = new Date(endDateFilter).getTime();
+        if (!isNaN(t)) globalMaxTime = t;
+      }
+      if (!globalMaxTime) {
+        for (let i = 0; i < rawDataset.length; i++) {
+          if (rawDataset[i].time > globalMaxTime) globalMaxTime = rawDataset[i].time;
+        }
+      }
+      if (!globalMaxTime) globalMaxTime = Date.now();
+
+      const ONE_DAY_MS = 86400000;
+      const t7Start = globalMaxTime - 6 * ONE_DAY_MS;
+      const prev7Start = globalMaxTime - 13 * ONE_DAY_MS;
+      const prev7End = globalMaxTime - 7 * ONE_DAY_MS;
+      const t30Start = globalMaxTime - 29 * ONE_DAY_MS;
+      const prev30Start = globalMaxTime - 59 * ONE_DAY_MS;
+      const prev30End = globalMaxTime - 30 * ONE_DAY_MS;
+
+      const hasDateFilter = Boolean(startDateFilter || endDateFilter);
+
+      const skuMap = new Map();
+
+      for (let i = 0; i < rawDataset.length; i++) {
+        const d = rawDataset[i];
+        const sku = d.sku;
+
+        let agg = skuMap.get(sku);
+        if (!agg) {
+          agg = {
+            sku: sku,
+            img: d.img,
+            cost: d.cost,
+            year: d.year,
+            season: d.season,
+            category: d.category,
+            status: d.status,
+            storeCategories: new Set(),
+            totalSales: 0,
+            totalRev: 0,
+            sales7d: 0,
+            prevSales7d: 0,
+            sales30d: 0,
+            prevSales30d: 0,
+            daily7: [0, 0, 0, 0, 0, 0, 0],
+            daily30: new Array(30).fill(0),
+            validRecordsCount: 0,
+            priceFallback: d.price
+          };
+          skuMap.set(sku, agg);
+        }
+
+        if (d.storeCategory) agg.storeCategories.add(d.storeCategory);
+
+        const t = d.time;
+        if (t >= t7Start && t <= globalMaxTime) agg.sales7d += d.sales;
+        else if (t >= prev7Start && t <= prev7End) agg.prevSales7d += d.sales;
+
+        if (t >= t30Start && t <= globalMaxTime) agg.sales30d += d.sales;
+        else if (t >= prev30Start && t <= prev30End) agg.prevSales30d += d.sales;
+
+        const dayDiff = Math.floor((globalMaxTime - t) / ONE_DAY_MS);
+        if (dayDiff >= 0 && dayDiff < 7) {
+          agg.daily7[6 - dayDiff] += d.sales;
+        }
+        if (dayDiff >= 0 && dayDiff < 30) {
+          agg.daily30[29 - dayDiff] += d.sales;
+        }
+
+        if (!hasDateFilter || ((!startDateFilter || d.date >= startDateFilter) && (!endDateFilter || d.date <= endDateFilter))) {
+          agg.totalSales += d.sales;
+          agg.totalRev += d.revenue;
+          agg.validRecordsCount++;
+        }
+      }
+
+      const rowsToRender = [];
+
+      skuMap.forEach(agg => {
+        const sku = agg.sku;
+
+        // 1. 多货号粘贴过滤
+        if (filterPastedSkus.length > 0) {
+          const matched = filterPastedSkus.some(ps => sku.toUpperCase().includes(ps.toUpperCase()));
+          if (!matched) return;
+        }
+
+        // 2. 5 维多选过滤
+        if (filterSelectedYears.size > 0 && !filterSelectedYears.has(agg.year)) return;
+        if (filterSelectedSeasons.size > 0 && !filterSelectedSeasons.has(agg.season)) return;
+        if (filterSelectedCategories.size > 0 && !filterSelectedCategories.has(agg.category)) return;
+        if (filterSelectedStatuses.size > 0 && !filterSelectedStatuses.has(agg.status)) return;
+        if (filterSelectedStoreCats.size > 0) {
+          let matchedStore = false;
+          agg.storeCategories.forEach(sc => {
+            if (filterSelectedStoreCats.has(sc)) matchedStore = true;
+          });
+          if (!matchedStore) return;
+        }
+
+        const cost = agg.cost || 0;
+        const currentAvgPrice = agg.totalSales > 0 ? (agg.totalRev / agg.totalSales) : (agg.priceFallback || 0);
+        const currentMarkup = cost > 0 ? (currentAvgPrice / cost) : 0;
+
+        const targetMarkup = skuCustomMarkupMap[sku] !== undefined ? skuCustomMarkupMap[sku] : selectedTargetMarkup;
+        const targetPrice = cost * targetMarkup;
+
+        // 7天与30天环比：计算绝对值销量增量 (如 +3, -3)
+        const wow7d = agg.sales7d - agg.prevSales7d;
+        const mom30d = agg.sales30d - agg.prevSales30d;
+
+        const inv = inventoryMap[sku] || { inWarehouse: 0, inTransit: 0, total: 0 };
+        const inWarehouse = inv.inWarehouse || 0;
+        const inTransit = inv.inTransit || 0;
+        const totalInventory = inv.total > 0 ? inv.total : (inWarehouse + inTransit);
+
+        // 3. 总库存条件筛选逻辑过滤
+        if (invFilterVal !== null && !isNaN(invFilterVal)) {
+          if (invFilterOp === 'gte' && !(totalInventory >= invFilterVal)) return;
+          if (invFilterOp === 'gt'  && !(totalInventory > invFilterVal))  return;
+          if (invFilterOp === 'lte' && !(totalInventory <= invFilterVal)) return;
+          if (invFilterOp === 'lt'  && !(totalInventory < invFilterVal))  return;
+        }
+
+        const denom = totalInventory + agg.totalSales;
+        const sellThroughRate = denom > 0 ? (agg.totalSales / denom * 100) : 0;
+
+        rowsToRender.push({
+          sku,
+          img: agg.img,
+          cost,
+          currentAvgPrice,
+          currentMarkup,
+          targetMarkup,
+          targetPrice,
+          totalSales: agg.totalSales,
+          totalRev: agg.totalRev,
+          sales7d: agg.sales7d,
+          prevSales7d: agg.prevSales7d,
+          wow7d,
+          sales30d: agg.sales30d,
+          prevSales30d: agg.prevSales30d,
+          mom30d,
+          daily7: agg.daily7,
+          daily30: agg.daily30,
+          inWarehouse,
+          inTransit,
+          totalInventory,
+          sellThroughRate,
+          recordsCount: agg.validRecordsCount
+        });
+      });
+
+      // 4. 排序逻辑
+      if (matrixSortColumn) {
+        rowsToRender.sort((a, b) => {
+          let valA = a[matrixSortColumn];
+          let valB = b[matrixSortColumn];
+          if (typeof valA === 'string') {
+            return matrixSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          }
+          valA = valA || 0;
+          valB = valB || 0;
+          return matrixSortOrder === 'asc' ? valA - valB : valB - valA;
+        });
+      } else if (currentSortMode === 'sellThroughAsc') {
+        rowsToRender.sort((a, b) => a.sellThroughRate - b.sellThroughRate);
+      } else if (currentSortMode === 'sellThroughDesc') {
+        rowsToRender.sort((a, b) => b.sellThroughRate - a.sellThroughRate);
+      } else if (currentSortMode === 'inventoryDesc') {
+        rowsToRender.sort((a, b) => b.totalInventory - a.totalInventory);
+      } else if (currentSortMode === 'sales7dDesc') {
+        rowsToRender.sort((a, b) => b.sales7d - a.sales7d);
+      } else if (currentSortMode === 'sales7dAsc') {
+        rowsToRender.sort((a, b) => a.sales7d - b.sales7d);
+      } else if (currentSortMode === 'sales30dDesc') {
+        rowsToRender.sort((a, b) => b.sales30d - a.sales30d);
+      } else if (currentSortMode === 'sales30dAsc') {
+        rowsToRender.sort((a, b) => a.sales30d - b.sales30d);
+      }
+
+      return rowsToRender;
+    }
+
+    // 渲染全货号矩阵表格 (极速单遍聚合 Map 架构，秒级响应数十万行)
+    function renderMatrixTable() {
+      const tbody = document.getElementById('matrixTableBody');
+      const tfoot = document.getElementById('matrixTableFoot');
+      tbody.innerHTML = '';
+      tfoot.innerHTML = '';
+
+      const rowsToRender = getFilteredMatrixRows();
+
+      // 刷新表头排序指示标记
+      document.querySelectorAll('.matrix-sortable-th').forEach(th => {
+        const key = th.dataset.sortKey;
+        const icon = th.querySelector('.sort-indicator');
+        if (icon) {
+          if (matrixSortColumn === key) {
+            icon.innerText = matrixSortOrder === 'asc' ? ' ▲' : ' ▼';
+            icon.className = 'sort-indicator ml-1 text-indigo-600 font-bold text-[11px]';
+          } else {
+            icon.innerText = ' ⇅';
+            icon.className = 'sort-indicator ml-1 text-slate-400 font-mono text-[10px]';
+          }
+        }
+      });
+
+      // 更新计数角标
+      document.getElementById('filteredSkuCountBadge').innerText = `共 ${rowsToRender.length} 款`;
+
+      if (rowsToRender.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 text-xs">没有匹配的货号或筛选结果，请尝试重置筛选条件</td></tr>`;
+        renderPaginationControls(0);
+        return;
+      }
+
+      // 5. 分页切片计算
+      const totalRows = rowsToRender.length;
+      const totalPages = Math.ceil(totalRows / matrixPageSize) || 1;
+      if (matrixCurrentPage > totalPages) matrixCurrentPage = totalPages;
+      if (matrixCurrentPage < 1) matrixCurrentPage = 1;
+
+      const startIndex = (matrixCurrentPage - 1) * matrixPageSize;
+      const pageRows = rowsToRender.slice(startIndex, startIndex + matrixPageSize);
+
+      renderPaginationControls(totalRows);
+
+      // 6. 渲染当前页 DOM 表格行 (使用 DocumentFragment 批处理挂载)
+      const fragment = document.createDocumentFragment();
+
+      const renderTrendBadge = (val) => {
+        if (val > 0) return `<span class="text-blue-600 font-bold inline-block font-mono">+${val.toLocaleString()}</span>`;
+        if (val < 0) return `<span class="text-rose-600 font-bold inline-block font-mono">${val.toLocaleString()}</span>`;
+        return `<span class="text-slate-400 inline-block font-mono">0</span>`;
+      };
+
+      pageRows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = `transition-colors hover:bg-slate-50/80 ${row.sku === currentSku ? 'bg-indigo-50/40 font-medium' : ''}`;
+
+        let strColorClass = 'text-slate-700 font-semibold';
+        if (row.sellThroughRate >= 70) strColorClass = 'text-emerald-600 font-extrabold';
+        else if (row.sellThroughRate >= 45) strColorClass = 'text-indigo-600 font-bold';
+        else strColorClass = 'text-amber-600 font-semibold';
+
+        tr.innerHTML = `
+          <!-- 1. 货号列 (独立在前，下划线加粗，点击查看走势弹窗) -->
+          <td class="py-3 px-2.5 text-center">
+            <a href="javascript:void(0)" onclick="openSkuTrendModal('${row.sku}')" class="font-extrabold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 font-mono text-sm block tracking-wide" title="点击查看【${row.sku}】近期量价走势与渠道表现">
+              ${row.sku}
+            </a>
+          </td>
+
+          <!-- 2. 商品图片列 (放大尺寸至 80px，支持点击放大预览) -->
+          <td class="py-3 px-2 text-center">
+            <div class="relative group cursor-zoom-in inline-block" onclick="openImagePreviewModal('${row.img}', '${row.sku}', '单位成本: ¥${row.cost.toFixed(1)}')">
+              <img src="${row.img}" alt="${row.sku}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 shadow-2xs transition-all group-hover:scale-105 group-hover:shadow-md" onerror="this.src='https://placehold.co/160x160/e2e8f0/64748b?text=Img'"/>
+              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-xl transition-colors flex items-center justify-center">
+                <svg class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+              </div>
+            </div>
+          </td>
+
+          <!-- 3. 累计销量 (放大字体，居中) -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-bold text-sm">${row.totalSales.toLocaleString()}</td>
+
+          <!-- 4. 近7天销量 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-800 text-sm">${row.sales7d.toLocaleString()}</td>
+
+          <!-- 5. 近7天销量趋势折线面积图 (Sparkline) -->
+          <td class="py-3 px-1 text-center">
+            ${generateSparklineSVG(row.daily7, 82, 30, '#6366f1')}
+          </td>
+
+          <!-- 6. 7天环比 -->
+          <td class="py-3 px-1.5 text-center font-mono text-xs sm:text-[13px]">${renderTrendBadge(row.wow7d)}</td>
+
+          <!-- 7. 近30天销量 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-800 text-sm">${row.sales30d.toLocaleString()}</td>
+
+          <!-- 8. 近30天销量趋势折线面积图 (Sparkline) -->
+          <td class="py-3 px-1 text-center">
+            ${generateSparklineSVG(row.daily30, 96, 30, '#0ea5e9')}
+          </td>
+
+          <!-- 9. 30天环比 -->
+          <td class="py-3 px-1.5 text-center font-mono text-xs sm:text-[13px]">${renderTrendBadge(row.mom30d)}</td>
+
+          <!-- 10. 在仓库存 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">${row.inWarehouse.toLocaleString()}</td>
+
+          <!-- 11. 在途库存 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-400 text-sm">${row.inTransit.toLocaleString()}</td>
+
+          <!-- 12. 总库存 -->
+          <td class="py-3 px-1.5 text-center font-mono font-bold text-slate-900 text-sm">${row.totalInventory.toLocaleString()}</td>
+
+          <!-- 13. 售罄率 -->
+          <td class="py-3 px-1.5 text-center font-mono text-sm ${strColorClass}">${row.sellThroughRate.toFixed(1)}%</td>
+
+          <!-- 14. 成本 (C) -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">¥${row.cost.toFixed(1)}</td>
+
+          <!-- 15. 当前均价 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-semibold text-sm">¥${row.currentAvgPrice.toFixed(1)}</td>
+
+          <!-- 16. 当前实际倍率 -->
+          <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">${row.currentMarkup.toFixed(2)}x</td>
+
+          <!-- 17. 目标倍率 -->
+          <td class="py-2 px-2 text-center bg-indigo-50/40">
+            <div class="inline-flex items-center space-x-1 justify-center">
+              <input type="number" step="0.05" min="1.0" max="15.0" value="${row.targetMarkup.toFixed(2)}"
+                data-sku="${row.sku}" data-cost="${row.cost}"
+                class="sku-markup-input w-16 px-1.5 py-1 text-sm font-bold text-indigo-700 bg-white border border-indigo-200 rounded-lg text-center focus:outline-none focus:border-indigo-500 font-mono shadow-2xs">
+              <span class="text-xs text-slate-400 font-medium">x</span>
+            </div>
+          </td>
+
+          <!-- 18. 对应价格 -->
+          <td class="py-2 px-2 text-center bg-indigo-50/40">
+            <div class="inline-flex items-center space-x-0.5 justify-center">
+              <span class="text-xs text-slate-400">¥</span>
+              <input type="number" step="1" min="1" max="99999" value="${Math.round(row.targetPrice)}"
+                data-sku="${row.sku}" data-cost="${row.cost}"
+                class="sku-price-input w-18 px-1.5 py-1 text-sm font-bold text-indigo-700 bg-white border border-indigo-200 rounded-lg text-center focus:outline-none focus:border-indigo-500 font-mono shadow-2xs">
+            </div>
+          </td>
+        `;
+
+        fragment.appendChild(tr);
+      });
+
+      tbody.appendChild(fragment);
+
+      // 事件委托绑定表格内输入框微调
+      tbody.querySelectorAll('.sku-markup-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const sku = e.target.dataset.sku;
+          const cost = parseFloat(e.target.dataset.cost) || 0;
+          const newMarkup = parseFloat(e.target.value);
+          if (!isNaN(newMarkup) && newMarkup > 0) {
+            skuCustomMarkupMap[sku] = newMarkup;
+            const priceInput = tbody.querySelector(`.sku-price-input[data-sku="${sku}"]`);
+            if (priceInput) priceInput.value = Math.round(cost * newMarkup);
+            renderMatrixTableFooter(rowsToRender);
+          }
+        });
+      });
+
+      tbody.querySelectorAll('.sku-price-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const sku = e.target.dataset.sku;
+          const cost = parseFloat(e.target.dataset.cost) || 0;
+          const newPrice = parseFloat(e.target.value);
+          if (!isNaN(newPrice) && cost > 0) {
+            const calcMarkup = parseFloat((newPrice / cost).toFixed(2));
+            skuCustomMarkupMap[sku] = calcMarkup;
+            const markupInput = tbody.querySelector(`.sku-markup-input[data-sku="${sku}"]`);
+            if (markupInput) markupInput.value = calcMarkup.toFixed(2);
+            renderMatrixTableFooter(rowsToRender);
+          }
+        });
+      });
+
+      // 总计行汇总全部筛选结果
+      renderMatrixTableFooter(rowsToRender);
+    }
+
+    // -------------------------------------------------------------
+    // 4.2 渲染大图展示模式卡片与独立分页 (同步套用全部筛选条件)
+    // -------------------------------------------------------------
+    function renderGalleryCards() {
+      const grid = document.getElementById('galleryCardsGrid');
+      const badge = document.getElementById('gallerySkuCountBadge');
+      if (!grid) return;
+
+      grid.innerHTML = '';
+      const rowsToRender = getFilteredMatrixRows();
+
+      if (badge) badge.innerText = `共 ${rowsToRender.length} 款`;
+
+      if (rowsToRender.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-xs">没有匹配的货号或筛选结果，请尝试重置筛选条件</div>`;
+        renderGalleryPaginationControls(0);
+        return;
+      }
+
+      // 计算大图模式分页切片
+      const totalRows = rowsToRender.length;
+      const totalPages = Math.ceil(totalRows / galleryPageSize) || 1;
+      if (galleryCurrentPage > totalPages) galleryCurrentPage = totalPages;
+      if (galleryCurrentPage < 1) galleryCurrentPage = 1;
+
+      const startIndex = (galleryCurrentPage - 1) * galleryPageSize;
+      const pageRows = rowsToRender.slice(startIndex, startIndex + galleryPageSize);
+
+      renderGalleryPaginationControls(totalRows);
+
+      const fragment = document.createDocumentFragment();
+
+      pageRows.forEach(row => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden group';
+
+        let badgeBg = 'bg-slate-100 text-slate-700';
+        let barBg = 'bg-slate-500';
+        if (row.sellThroughRate >= 70) {
+          badgeBg = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+          barBg = 'bg-emerald-500';
+        } else if (row.sellThroughRate >= 45) {
+          badgeBg = 'bg-indigo-50 text-indigo-700 border border-indigo-200';
+          barBg = 'bg-indigo-500';
+        } else {
+          badgeBg = 'bg-amber-50 text-amber-700 border border-amber-200';
+          barBg = 'bg-amber-500';
+        }
+
+        const renderTrend = (val) => {
+          if (val > 0) return `<span class="text-blue-600 font-bold font-mono">+${val.toLocaleString()}</span>`;
+          if (val < 0) return `<span class="text-rose-600 font-bold font-mono">${val.toLocaleString()}</span>`;
+          return `<span class="text-slate-400 font-mono">0</span>`;
+        };
+
+        card.innerHTML = `
+          <!-- 卡片顶栏：货号与售罄率 -->
+          <div class="p-3 pb-2 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
+            <a href="javascript:void(0)" onclick="openSkuTrendModal('${row.sku}')" class="font-extrabold text-indigo-600 hover:text-indigo-800 underline underline-offset-4 font-mono text-sm tracking-wide" title="点击查看【${row.sku}】趋势">
+              ${row.sku}
+            </a>
+            <span class="text-xs px-2 py-0.5 rounded-full font-bold font-mono ${badgeBg}">
+              售罄: ${row.sellThroughRate.toFixed(1)}%
+            </span>
+          </div>
+
+          <!-- 大图展示容器 (点击放大预览) -->
+          <div class="relative w-full h-56 bg-slate-100 overflow-hidden cursor-zoom-in" onclick="openImagePreviewModal('${row.img}', '${row.sku}', '单位成本: ¥${row.cost.toFixed(1)}')">
+            <img src="${row.img}" alt="${row.sku}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=SKU'"/>
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors flex items-center justify-center">
+              <span class="bg-black/60 text-white text-[11px] px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1 shadow-md">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+                <span>点击放大</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 售罄率动态进度指示条 -->
+          <div class="w-full bg-slate-100 h-1.5 overflow-hidden">
+            <div class="${barBg} h-full transition-all duration-300" style="width: ${Math.min(100, Math.max(0, row.sellThroughRate))}%;"></div>
+          </div>
+
+          <!-- 核心量利与库存指标区 -->
+          <div class="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between text-xs">
+            
+            <!-- 销量与周期增量 -->
+            <div class="grid grid-cols-2 gap-2 bg-slate-50/70 p-2 rounded-xl border border-slate-100 font-mono">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-sans">累计销量</span>
+                <span class="text-sm font-bold text-slate-800">${row.totalSales.toLocaleString()}</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-sans">总库存</span>
+                <span class="text-sm font-bold text-slate-800">${row.totalInventory.toLocaleString()}</span>
+                <span class="text-[10px] text-slate-400 block font-sans">(仓${row.inWarehouse}/途${row.inTransit})</span>
+              </div>
+            </div>
+
+            <!-- 7天与30天趋势 Sparklines -->
+            <div class="grid grid-cols-2 gap-2 py-1 border-t border-b border-slate-100 text-center">
+              <div class="flex flex-col items-center">
+                <div class="flex items-center space-x-1 text-[11px] mb-0.5">
+                  <span class="text-slate-500 font-sans">近7天:</span>
+                  <span class="font-bold text-slate-800 font-mono">${row.sales7d}</span>
+                  <span class="text-[10px]">(${renderTrend(row.wow7d)})</span>
+                </div>
+                ${generateSparklineSVG(row.daily7, 78, 24, '#6366f1')}
+              </div>
+              <div class="flex flex-col items-center">
+                <div class="flex items-center space-x-1 text-[11px] mb-0.5">
+                  <span class="text-slate-500 font-sans">近30天:</span>
+                  <span class="font-bold text-slate-800 font-mono">${row.sales30d}</span>
+                  <span class="text-[10px]">(${renderTrend(row.mom30d)})</span>
+                </div>
+                ${generateSparklineSVG(row.daily30, 78, 24, '#0ea5e9')}
+              </div>
+            </div>
+
+            <!-- 价格与成本倍率 -->
+            <div class="flex items-center justify-between text-slate-600 font-mono text-[11px]">
+              <span>成本: ¥${row.cost.toFixed(1)}</span>
+              <span>当前均价: ¥${row.currentAvgPrice.toFixed(1)}</span>
+              <span class="font-bold text-slate-800">倍率: ${row.currentMarkup.toFixed(2)}x</span>
+            </div>
+
+            <!-- 目标倍率与对应价格微调控制栏 -->
+            <div class="bg-indigo-50/70 p-2 rounded-xl border border-indigo-100/90 flex items-center justify-between gap-1">
+              <div class="flex items-center space-x-1">
+                <span class="text-[11px] font-bold text-indigo-900 font-sans">目标:</span>
+                <input type="number" step="0.05" min="1.0" max="15.0" value="${row.targetMarkup.toFixed(2)}"
+                  data-sku="${row.sku}" data-cost="${row.cost}"
+                  class="sku-gallery-markup-input w-14 px-1 py-0.5 text-xs font-bold text-indigo-700 bg-white border border-indigo-200 rounded text-center focus:outline-none focus:border-indigo-500 font-mono">
+                <span class="text-[10px] text-slate-400 font-bold">x</span>
+              </div>
+              <div class="flex items-center space-x-0.5">
+                <span class="text-[11px] font-bold text-indigo-900 font-sans">定:</span>
+                <span class="text-[11px] text-slate-400">¥</span>
+                <input type="number" step="1" min="1" max="99999" value="${Math.round(row.targetPrice)}"
+                  data-sku="${row.sku}" data-cost="${row.cost}"
+                  class="sku-gallery-price-input w-16 px-1 py-0.5 text-xs font-bold text-indigo-700 bg-white border border-indigo-200 rounded text-center focus:outline-none focus:border-indigo-500 font-mono">
+              </div>
+            </div>
+
+          </div>
+        `;
+
+        fragment.appendChild(card);
+      });
+
+      grid.appendChild(fragment);
+
+      // 事件绑定：卡片内倍率与价格微调双向同步
+      grid.querySelectorAll('.sku-gallery-markup-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const sku = e.target.dataset.sku;
+          const cost = parseFloat(e.target.dataset.cost) || 0;
+          const newMarkup = parseFloat(e.target.value);
+          if (!isNaN(newMarkup) && newMarkup > 0) {
+            skuCustomMarkupMap[sku] = newMarkup;
+            renderMatrixTable();
+            renderGalleryCards();
+          }
+        });
+      });
+
+      grid.querySelectorAll('.sku-gallery-price-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const sku = e.target.dataset.sku;
+          const cost = parseFloat(e.target.dataset.cost) || 0;
+          const newPrice = parseFloat(e.target.value);
+          if (!isNaN(newPrice) && cost > 0) {
+            const calcMarkup = parseFloat((newPrice / cost).toFixed(2));
+            skuCustomMarkupMap[sku] = calcMarkup;
+            renderMatrixTable();
+            renderGalleryCards();
+          }
+        });
+      });
+    }
+
+    // 渲染大图展示模式独立分页按钮
+    function renderGalleryPaginationControls(totalRows) {
+      const infoSpan = document.getElementById('galleryPaginationInfo');
+      const pageNumbersContainer = document.getElementById('galleryPaginationPageNumbers');
+      const btnFirst = document.getElementById('btnGalleryFirstPage');
+      const btnPrev = document.getElementById('btnGalleryPrevPage');
+      const btnNext = document.getElementById('btnGalleryNextPage');
+      const btnLast = document.getElementById('btnGalleryLastPage');
+
+      if (!infoSpan || !pageNumbersContainer) return;
+      pageNumbersContainer.innerHTML = '';
+
+      if (totalRows === 0) {
+        infoSpan.innerText = '显示第 0 到 0 款，共 0 款';
+        btnFirst.disabled = true;
+        btnPrev.disabled = true;
+        btnNext.disabled = true;
+        btnLast.disabled = true;
+        return;
+      }
+
+      const totalPages = Math.ceil(totalRows / galleryPageSize) || 1;
+      const start = (galleryCurrentPage - 1) * galleryPageSize + 1;
+      const end = Math.min(galleryCurrentPage * galleryPageSize, totalRows);
+      infoSpan.innerText = `显示第 ${start} 到 ${end} 款，共 ${totalRows.toLocaleString()} 款 (第 ${galleryCurrentPage}/${totalPages} 页)`;
+
+      btnFirst.disabled = galleryCurrentPage <= 1;
+      btnPrev.disabled = galleryCurrentPage <= 1;
+      btnNext.disabled = galleryCurrentPage >= totalPages;
+      btnLast.disabled = galleryCurrentPage >= totalPages;
+
+      btnFirst.onclick = () => { galleryCurrentPage = 1; renderGalleryCards(); };
+      btnPrev.onclick = () => { if (galleryCurrentPage > 1) { galleryCurrentPage--; renderGalleryCards(); } };
+      btnNext.onclick = () => { if (galleryCurrentPage < totalPages) { galleryCurrentPage++; renderGalleryCards(); } };
+      btnLast.onclick = () => { galleryCurrentPage = totalPages; renderGalleryCards(); };
+
+      let pages = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        if (galleryCurrentPage <= 4) {
+          pages = [1, 2, 3, 4, 5, '...', totalPages];
+        } else if (galleryCurrentPage >= totalPages - 3) {
+          pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        } else {
+          pages = [1, '...', galleryCurrentPage - 1, galleryCurrentPage, galleryCurrentPage + 1, '...', totalPages];
+        }
+      }
+
+      pages.forEach(p => {
+        if (p === '...') {
+          const dots = document.createElement('span');
+          dots.className = 'px-1 text-slate-400 text-xs';
+          dots.innerText = '...';
+          pageNumbersContainer.appendChild(dots);
+        } else {
+          const btn = document.createElement('button');
+          btn.className = `w-7 h-7 text-xs rounded-md font-medium transition-colors ${p === galleryCurrentPage ? 'bg-indigo-600 text-white font-bold' : 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
+          btn.innerText = p;
+          btn.onclick = () => { galleryCurrentPage = p; renderGalleryCards(); };
+          pageNumbersContainer.appendChild(btn);
+        }
+      });
+    }
+
+    // 渲染分页按钮组件
+    function renderPaginationControls(totalRows) {
+      const infoSpan = document.getElementById('paginationInfo');
+      const pageNumbersContainer = document.getElementById('paginationPageNumbers');
+      const btnFirst = document.getElementById('btnFirstPage');
+      const btnPrev = document.getElementById('btnPrevPage');
+      const btnNext = document.getElementById('btnNextPage');
+      const btnLast = document.getElementById('btnLastPage');
+
+      pageNumbersContainer.innerHTML = '';
+
+      if (totalRows === 0) {
+        infoSpan.innerText = '显示第 0 到 0 款，共 0 款';
+        btnFirst.disabled = true;
+        btnPrev.disabled = true;
+        btnNext.disabled = true;
+        btnLast.disabled = true;
+        return;
+      }
+
+      const totalPages = Math.ceil(totalRows / matrixPageSize) || 1;
+      const start = (matrixCurrentPage - 1) * matrixPageSize + 1;
+      const end = Math.min(matrixCurrentPage * matrixPageSize, totalRows);
+      infoSpan.innerText = `显示第 ${start} 到 ${end} 款，共 ${totalRows.toLocaleString()} 款 (第 ${matrixCurrentPage}/${totalPages} 页)`;
+
+      btnFirst.disabled = matrixCurrentPage <= 1;
+      btnPrev.disabled = matrixCurrentPage <= 1;
+      btnNext.disabled = matrixCurrentPage >= totalPages;
+      btnLast.disabled = matrixCurrentPage >= totalPages;
+
+      btnFirst.onclick = () => { matrixCurrentPage = 1; renderMatrixTable(); };
+      btnPrev.onclick = () => { if (matrixCurrentPage > 1) { matrixCurrentPage--; renderMatrixTable(); } };
+      btnNext.onclick = () => { if (matrixCurrentPage < totalPages) { matrixCurrentPage++; renderMatrixTable(); } };
+      btnLast.onclick = () => { matrixCurrentPage = totalPages; renderMatrixTable(); };
+
+      // 生成紧凑数字页码
+      let pages = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        if (matrixCurrentPage <= 4) {
+          pages = [1, 2, 3, 4, 5, '...', totalPages];
+        } else if (matrixCurrentPage >= totalPages - 3) {
+          pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        } else {
+          pages = [1, '...', matrixCurrentPage - 1, matrixCurrentPage, matrixCurrentPage + 1, '...', totalPages];
+        }
+      }
+
+      pages.forEach(p => {
+        if (p === '...') {
+          const dots = document.createElement('span');
+          dots.className = 'px-1 text-slate-400 text-xs';
+          dots.innerText = '...';
+          pageNumbersContainer.appendChild(dots);
+        } else {
+          const btn = document.createElement('button');
+          btn.className = `w-7 h-7 text-xs rounded-md font-medium transition-colors ${p === matrixCurrentPage ? 'bg-indigo-600 text-white font-bold' : 'border border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`;
+          btn.innerText = p;
+          btn.onclick = () => { matrixCurrentPage = p; renderMatrixTable(); };
+          pageNumbersContainer.appendChild(btn);
+        }
+      });
+    }
+
+    // 独立计算并刷新总计汇总行 (去箭头)
+    function renderMatrixTableFooter(rowsToRender) {
+      const tfoot = document.getElementById('matrixTableFoot');
+      tfoot.innerHTML = '';
+      if (!rowsToRender || rowsToRender.length === 0) return;
+
+      let sumCost = 0, sumTotalSales = 0, sumTotalRev = 0;
+      let sumSales7d = 0, sumPrevSales7d = 0, sumSales30d = 0, sumPrevSales30d = 0;
+      let sumInWarehouse = 0, sumInTransit = 0, sumTotalInventory = 0;
+      let sumTargetRev = 0;
+
+      for (let i = 0; i < rowsToRender.length; i++) {
+        const r = rowsToRender[i];
+        const currentTargetMarkup = skuCustomMarkupMap[r.sku] !== undefined ? skuCustomMarkupMap[r.sku] : r.targetMarkup;
+        sumCost += r.cost;
+        sumTotalSales += r.totalSales;
+        sumTotalRev += r.totalRev;
+        sumSales7d += r.sales7d;
+        sumPrevSales7d += r.prevSales7d;
+        sumSales30d += r.sales30d;
+        sumPrevSales30d += r.prevSales30d;
+        sumInWarehouse += r.inWarehouse;
+        sumInTransit += r.inTransit;
+        sumTotalInventory += r.totalInventory;
+        sumTargetRev += (r.cost * currentTargetMarkup);
+      }
+
+      const avgCost = rowsToRender.length > 0 ? (sumCost / rowsToRender.length) : 0;
+      const overallAvgPrice = sumTotalSales > 0 ? (sumTotalRev / sumTotalSales) : 0;
+      const overallAvgMarkup = avgCost > 0 ? (overallAvgPrice / avgCost) : 0;
+      const avgTargetPrice = rowsToRender.length > 0 ? (sumTargetRev / rowsToRender.length) : 0;
+      const avgTargetMarkup = avgCost > 0 ? (avgTargetPrice / avgCost) : selectedTargetMarkup;
+      const totalWow7d = sumSales7d - sumPrevSales7d;
+      const totalMom30d = sumSales30d - sumPrevSales30d;
+      const totalDenom = sumTotalInventory + sumTotalSales;
+      const overallSellThrough = totalDenom > 0 ? (sumTotalSales / totalDenom * 100) : 0;
+
+      const formatTrendText = (val) => {
+        if (val > 0) return `<span class="text-blue-600 font-bold font-mono">+${val.toLocaleString()}</span>`;
+        if (val < 0) return `<span class="text-rose-600 font-bold font-mono">${val.toLocaleString()}</span>`;
+        return `<span class="text-slate-400 font-mono">0</span>`;
+      };
+
+      const tfootRow = document.createElement('tr');
+      tfootRow.className = 'py-3 border-t-2 border-slate-300';
+      tfootRow.innerHTML = `
+        <td class="py-3 px-2 text-center font-extrabold text-slate-900 text-sm">总计/平均</td>
+        <td class="py-3 px-2 text-center text-slate-400 text-xs">共 ${rowsToRender.length} 款</td>
+        <td class="py-3 px-1.5 text-center font-mono text-indigo-900 font-extrabold text-sm">${sumTotalSales.toLocaleString()}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-bold text-sm">${sumSales7d.toLocaleString()}</td>
+        <td class="py-3 px-1 text-center text-slate-300 font-mono text-xs">-</td>
+        <td class="py-3 px-1.5 text-center font-mono text-xs sm:text-[13px]">${formatTrendText(totalWow7d)}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-bold text-sm">${sumSales30d.toLocaleString()}</td>
+        <td class="py-3 px-1 text-center text-slate-300 font-mono text-xs">-</td>
+        <td class="py-3 px-1.5 text-center font-mono text-xs sm:text-[13px]">${formatTrendText(totalMom30d)}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">${sumInWarehouse.toLocaleString()}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-500 text-sm">${sumInTransit.toLocaleString()}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-bold text-sm">${sumTotalInventory.toLocaleString()}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-emerald-700 font-extrabold text-sm">${overallSellThrough.toFixed(1)}%</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">¥${avgCost.toFixed(1)}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-900 font-semibold text-sm">¥${overallAvgPrice.toFixed(1)}</td>
+        <td class="py-3 px-1.5 text-center font-mono text-slate-700 text-sm">${overallAvgMarkup.toFixed(2)}x</td>
+        <td class="py-3 px-2 text-center font-mono text-indigo-700 bg-indigo-50/70 font-extrabold text-sm">${avgTargetMarkup.toFixed(2)}x</td>
+        <td class="py-3 px-2 text-center font-mono text-indigo-700 bg-indigo-50/70 font-extrabold text-sm">¥${Math.round(avgTargetPrice)}</td>
+      `;
+      tfoot.appendChild(tfootRow);
+    }
+
+    // -------------------------------------------------------------
+    // 5. 货号近期量价走势弹窗逻辑 (按自然周聚合统计 + 渠道归类透视)
+    // -------------------------------------------------------------
+    function openSkuTrendModal(sku) {
+      const allSkuRows = [];
+      for (let i = 0; i < rawDataset.length; i++) {
+        if (rawDataset[i].sku === sku) allSkuRows.push(rawDataset[i]);
+      }
+      if (allSkuRows.length === 0) return;
+
+      const first = allSkuRows[0];
+      const inv = inventoryMap[sku] || { inWarehouse: 0, inTransit: 0, total: 0 };
+      const skuRows = getFilteredDataByDate(allSkuRows);
+      
+      let totalSales = 0, totalRev = 0;
+      for (let i = 0; i < skuRows.length; i++) {
+        totalSales += skuRows[i].sales;
+        totalRev += skuRows[i].revenue;
+      }
+      const avgPrice = totalSales > 0 ? (totalRev / totalSales) : (first.price || 0);
+      const markup = first.cost > 0 ? (avgPrice / first.cost) : 0;
+      const totalInventory = inv.total > 0 ? inv.total : (inv.inWarehouse + inv.inTransit);
+      const str = (totalInventory + totalSales) > 0 ? (totalSales / (totalInventory + totalSales) * 100) : 0;
+
+      document.getElementById('modalSkuImg').src = first.img;
+      const dateDesc = `${startDateFilter || '起始'} 至 ${endDateFilter || '截止'}`;
+      document.getElementById('modalSkuTitle').innerText = `${sku} · 周度量价走势与渠道透视 (${dateDesc})`;
+      document.getElementById('modalSkuBadge').innerText = `${first.category || '服装'} / ${first.status || '正价'}`;
+      document.getElementById('modalSkuSubtitle').innerText = `${first.year || '2025'}年 · ${first.season || '通用'} | 单位成本: ¥${first.cost.toFixed(2)}`;
+      
+      document.getElementById('modalStatSalesRev').innerText = `${totalSales.toLocaleString()} 件 / ¥${Math.round(totalRev).toLocaleString()}`;
+      document.getElementById('modalStatPriceMarkup').innerText = `¥${avgPrice.toFixed(1)} / ${markup.toFixed(2)}倍`;
+      document.getElementById('modalStatInventory').innerText = `${totalInventory.toLocaleString()} (仓: ${inv.inWarehouse} / 途: ${inv.inTransit})`;
+      document.getElementById('modalStatSellThrough').innerText = `${str.toFixed(1)}%`;
+
+      document.getElementById('btnSetAsMainSku').onclick = () => {
+        currentSku = sku;
+        const comboboxInput = document.getElementById('skuComboboxInput');
+        if (comboboxInput) comboboxInput.value = sku;
+        refreshAnalysis();
+        closeSkuTrendModal();
+        showToast(`已将 ${sku} 设为上方主分析货号`);
+      };
+
+      // 1. 周度聚合核心逻辑：按自然周归集销量与加权成交均价
+      const weekAggMap = new Map();
+      skuRows.forEach(r => {
+        const d = new Date(r.date);
+        if (isNaN(d.getTime())) return;
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 调整至本周一
+        const monday = new Date(d);
+        monday.setDate(diff);
+        const monStr = monday.toISOString().slice(0, 10);
+        
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        const sunStr = sunday.toISOString().slice(0, 10);
+
+        const weekKey = monStr;
+        const weekLabel = `${monStr.slice(5)}~${sunStr.slice(5)}周`;
+
+        let w = weekAggMap.get(weekKey);
+        if (!w) {
+          w = {
+            weekKey,
+            weekLabel,
+            sales: 0,
+            revenue: 0,
+            time: monday.getTime()
+          };
+          weekAggMap.set(weekKey, w);
+        }
+        w.sales += r.sales;
+        w.revenue += r.revenue;
+      });
+
+      const sortedWeeks = Array.from(weekAggMap.values()).sort((a, b) => a.time - b.time);
+      const weekLabels = sortedWeeks.map(w => w.weekLabel);
+      const weekSales = sortedWeeks.map(w => w.sales);
+      const weekAvgPrices = sortedWeeks.map(w => w.sales > 0 ? Number((w.revenue / w.sales).toFixed(1)) : 0);
+
+      // 计算柱状图与折线图的纵轴上限预留空间，确保数据标签不贴顶
+      const maxWeeklySale = safeMax(weekSales, 100);
+      const maxWeeklyPrice = safeMax(weekAvgPrices, 100);
+
+      const ctx = document.getElementById('chartSkuTrend').getContext('2d');
+      if (chartSkuTrendInstance) chartSkuTrendInstance.destroy();
+
+      // 自定义纯 Canvas 数据标签插件 (无需外部大库依赖，高清绘制数值)
+      const dataLabelsPlugin = {
+        id: 'skuTrendDataLabelsPlugin',
+        afterDatasetsDraw(chart) {
+          const c = chart.ctx;
+          chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (!meta || meta.hidden) return;
+            meta.data.forEach((element, index) => {
+              const val = dataset.data[index];
+              if (val === undefined || val === null || isNaN(val)) return;
+
+              c.save();
+              c.font = 'bold 11px Inter, system-ui, sans-serif';
+              c.textAlign = 'center';
+              c.textBaseline = 'bottom';
+
+              if (dataset.type === 'bar') {
+                if (val > 0) {
+                  c.fillStyle = '#4f46e5';
+                  c.fillText(val.toLocaleString(), element.x, Math.max(14, element.y - 4));
+                }
+              } else if (dataset.type === 'line') {
+                c.fillStyle = '#b45309';
+                c.fillText('¥' + val, element.x, Math.max(14, element.y - 8));
+              }
+              c.restore();
+            });
+          });
+        }
+      };
+
+      chartSkuTrendInstance = new Chart(ctx, {
+        plugins: [dataLabelsPlugin],
+        data: {
+          labels: weekLabels,
+          datasets: [
+            {
+              type: 'bar',
+              label: '周度销量 (件)',
+              data: weekSales,
+              backgroundColor: '#818cf8',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'line',
+              label: '周均成交价 (元)',
+              data: weekAvgPrices,
+              borderColor: '#f59e0b',
+              backgroundColor: '#f59e0b',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { top: 24, left: 8, right: 8 }
+          },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: item => item.datasetIndex === 0 ? `周销量: ${item.raw.toLocaleString()} 件` : `周均成交价: ¥${item.raw}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: '周销量 (件)', font: { size: 10 } },
+              grid: { color: '#f1f5f9' },
+              suggestedMax: Math.ceil(maxWeeklySale * 1.18)
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: '件单价 (¥)', font: { size: 10 } },
+              grid: { drawOnChartArea: false },
+              suggestedMax: Math.ceil(maxWeeklyPrice * 1.15)
+            }
+          }
+        }
+      });
+
+      // 2. 渠道归类销量与成交均价明细核算
+      const channelMap = new Map();
+      skuRows.forEach(r => {
+        const cat = r.storeCategory || '全渠道';
+        let c = channelMap.get(cat);
+        if (!c) {
+          c = { category: cat, sales: 0, revenue: 0 };
+          channelMap.set(cat, c);
+        }
+        c.sales += r.sales;
+        c.revenue += r.revenue;
+      });
+
+      const channelRows = Array.from(channelMap.values()).sort((a, b) => b.sales - a.sales);
+      const channelTbody = document.getElementById('modalChannelTableBody');
+      channelTbody.innerHTML = '';
+
+      if (channelRows.length === 0) {
+        channelTbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-slate-400">当前日期范围内暂无渠道数据</td></tr>`;
+      } else {
+        channelRows.forEach(c => {
+          const chAvgPrice = c.sales > 0 ? (c.revenue / c.sales) : 0;
+          const chShare = totalSales > 0 ? (c.sales / totalSales * 100) : 0;
+          const chMarkup = first.cost > 0 ? (chAvgPrice / first.cost) : 0;
+          const revWan = (c.revenue / 10000).toFixed(1);
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50 transition-colors';
+          tr.innerHTML = `
+            <td class="py-2.5 px-3 font-semibold text-slate-700">${c.category}</td>
+            <td class="py-2.5 px-3 text-right text-slate-800">${c.sales.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-right text-slate-500">${chShare.toFixed(1)}%</td>
+            <td class="py-2.5 px-3 text-right text-slate-800 font-bold">${revWan}万</td>
+            <td class="py-2.5 px-3 text-right font-bold text-indigo-700">¥${chAvgPrice.toFixed(1)}</td>
+            <td class="py-2.5 px-3 text-right text-slate-600">${chMarkup.toFixed(2)}x</td>
+          `;
+          channelTbody.appendChild(tr);
+        });
+      }
+
+      const modal = document.getElementById('skuTrendModal');
+      const modalCard = document.getElementById('skuTrendModalCard');
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalCard.classList.remove('scale-95');
+    }
+
+    function closeSkuTrendModal() {
+      const modal = document.getElementById('skuTrendModal');
+      const modalCard = document.getElementById('skuTrendModalCard');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modalCard.classList.add('scale-95');
+    }
+
+    // 图片放大预览 Modal 控制函数
+    function openImagePreviewModal(imgUrl, sku, desc = '') {
+      const modal = document.getElementById('imagePreviewModal');
+      const card = document.getElementById('imagePreviewCard');
+      const img = document.getElementById('imagePreviewImg');
+      const skuTxt = document.getElementById('imagePreviewSku');
+      const descTxt = document.getElementById('imagePreviewDesc');
+
+      img.src = imgUrl || 'https://placehold.co/400x400/e2e8f0/64748b?text=No+Image';
+      skuTxt.innerText = sku;
+      descTxt.innerText = desc;
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      card.classList.remove('scale-95');
+    }
+
+    function closeImagePreviewModal() {
+      const modal = document.getElementById('imagePreviewModal');
+      const card = document.getElementById('imagePreviewCard');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      card.classList.add('scale-95');
+    }
+
+    // -------------------------------------------------------------
+    // 6. 下拉菜单与货号模糊搜索组合框 (Combobox)
+    // -------------------------------------------------------------
+    let availableSkuList = [];
+
+    // 5大维度筛选配置
+    const multiFilterConfigs = [
+      { id: 'storeCat', title: '店铺归类', field: 'storeCategory', set: filterSelectedStoreCats },
+      { id: 'status', title: '货品状态', field: 'status', set: filterSelectedStatuses },
+      { id: 'year', title: '年份', field: 'year', set: filterSelectedYears },
+      { id: 'season', title: '季节', field: 'season', set: filterSelectedSeasons },
+      { id: 'category', title: '商品类目', field: 'category', set: filterSelectedCategories }
+    ];
+
+    function closeAllDropdownPanels() {
+      const panels = document.querySelectorAll('.multi-filter-panel');
+      panels.forEach(p => p.classList.add('hidden'));
+      const arrows = document.querySelectorAll('.multi-filter-arrow');
+      arrows.forEach(a => a.classList.remove('rotate-180'));
+    }
+
+    function renderMultiFilterDropdowns() {
+      const grid = document.getElementById('multiFilterDropdownsGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      let hasAnyFilterActive = false;
+
+      multiFilterConfigs.forEach(cfg => {
+        // 动态收集该维度的唯一枚举值及其频次
+        const valCountMap = new Map();
+        for (let i = 0; i < rawDataset.length; i++) {
+          const val = rawDataset[i][cfg.field];
+          if (val) {
+            valCountMap.set(val, (valCountMap.get(val) || 0) + 1);
+          }
+        }
+
+        const sortedVals = Array.from(valCountMap.keys()).sort();
+        const selectedCount = cfg.set.size;
+        if (selectedCount > 0) hasAnyFilterActive = true;
+
+        let triggerText = `${cfg.title}: 全部`;
+        if (selectedCount === 1) {
+          triggerText = `${cfg.title}: ${Array.from(cfg.set)[0]}`;
+        } else if (selectedCount > 1) {
+          triggerText = `${cfg.title}: 已选(${selectedCount})`;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'relative text-xs';
+
+        const isFiltered = selectedCount > 0;
+        const btnClass = isFiltered
+          ? 'w-full flex items-center justify-between py-1.5 px-2 bg-indigo-50/80 border border-indigo-300 text-indigo-700 font-bold rounded-lg shadow-2xs hover:bg-indigo-100 transition-colors'
+          : 'w-full flex items-center justify-between py-1.5 px-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg shadow-2xs hover:bg-slate-50 transition-colors';
+
+        container.innerHTML = `
+          <button type="button" class="multi-filter-trigger ${btnClass}" data-filter-id="${cfg.id}">
+            <span class="truncate pr-1">${triggerText}</span>
+            <svg class="multi-filter-arrow w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div class="multi-filter-panel hidden absolute left-0 top-full mt-1 w-48 sm:w-56 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2 space-y-1" data-panel-id="${cfg.id}">
+            <div class="flex items-center justify-between pb-1.5 mb-1 border-b border-slate-100 text-[11px]">
+              <span class="font-bold text-slate-700">${cfg.title}筛选</span>
+              <button type="button" class="btn-clear-single-filter text-indigo-600 hover:text-indigo-800 font-medium hover:underline">清空已选</button>
+            </div>
+            <div class="space-y-1">
+              ${sortedVals.length === 0 ? '<div class="text-slate-400 py-1 text-center">暂无选项</div>' : ''}
+              ${sortedVals.map(val => {
+                const isChecked = cfg.set.has(val);
+                return `
+                  <label class="flex items-center justify-between p-1 hover:bg-slate-50 rounded cursor-pointer select-none">
+                    <div class="flex items-center space-x-1.5 truncate">
+                      <input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''} class="filter-check-item rounded border-slate-300 text-indigo-600 focus:ring-0">
+                      <span class="text-slate-700 truncate font-medium">${val}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono ml-1">(${valCountMap.get(val)})</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+
+        const triggerBtn = container.querySelector('.multi-filter-trigger');
+        const panel = container.querySelector('.multi-filter-panel');
+        const arrow = container.querySelector('.multi-filter-arrow');
+
+        triggerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isCurrentlyHidden = panel.classList.contains('hidden');
+          closeAllDropdownPanels();
+          if (isCurrentlyHidden) {
+            panel.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+          }
+        });
+
+        panel.addEventListener('click', (e) => {
+          e.stopPropagation();
+        });
+
+        const clearBtn = panel.querySelector('.btn-clear-single-filter');
+        if (clearBtn) {
+          clearBtn.addEventListener('click', () => {
+            cfg.set.clear();
+            matrixCurrentPage = 1;
+            galleryCurrentPage = 1;
+            renderMultiFilterDropdowns();
+            renderMatrixTable();
+            renderGalleryCards();
+          });
+        }
+
+        const checkboxes = panel.querySelectorAll('.filter-check-item');
+        checkboxes.forEach(cb => {
+          cb.addEventListener('change', (e) => {
+            const v = e.target.value;
+            if (e.target.checked) {
+              cfg.set.add(v);
+            } else {
+              cfg.set.delete(v);
+            }
+            matrixCurrentPage = 1;
+            galleryCurrentPage = 1;
+            renderMultiFilterDropdowns();
+            renderMatrixTable();
+            renderGalleryCards();
+          });
+        });
+
+        grid.appendChild(container);
+      });
+
+      // 同步全局重置按钮显隐
+      const resetBtn = document.getElementById('btnResetMultiFilters');
+      if (resetBtn) {
+        if (hasAnyFilterActive) {
+          resetBtn.classList.remove('hidden');
+        } else {
+          resetBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    function renderSkuComboboxOptions(filterText = '') {
+      const menu = document.getElementById('skuComboboxMenu');
+      if (!menu) return;
+      menu.innerHTML = '';
+
+      const query = filterText.trim().toLowerCase();
+      const filtered = availableSkuList.filter(item => {
+        if (!query) return true;
+        return item.sku.toLowerCase().includes(query) || (item.name && item.name.toLowerCase().includes(query)) || (item.category && item.category.toLowerCase().includes(query));
+      });
+
+      if (filtered.length === 0) {
+        menu.innerHTML = `<div class="p-2 text-center text-xs text-slate-400">无匹配货号</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-2 hover:bg-indigo-50/70 rounded-lg cursor-pointer text-xs transition-colors ${item.sku === currentSku ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700'}`;
+        row.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="font-mono">${item.sku}</span>
+            <span class="text-[11px] text-slate-400">${item.category || ''}</span>
+          </div>
+          <span class="text-[11px] font-medium text-slate-400">${item.status || ''}</span>
+        `;
+        row.addEventListener('click', () => {
+          currentSku = item.sku;
+          const input = document.getElementById('skuComboboxInput');
+          if (input) input.value = item.sku;
+          menu.classList.add('hidden');
+          const arrow = document.getElementById('skuComboboxArrow');
+          if (arrow) arrow.classList.remove('rotate-180');
+          refreshAnalysis();
+        });
+        menu.appendChild(row);
+      });
+    }
+
+    function updateDropdowns() {
+      const storeCatSelect = document.getElementById('storeCategoryFilter');
+      const comboboxInput = document.getElementById('skuComboboxInput');
+
+      const skuMetaMap = new Map();
+      const storeCatSet = new Set();
+      for (let i = 0; i < rawDataset.length; i++) {
+        const d = rawDataset[i];
+        if (!skuMetaMap.has(d.sku)) {
+          skuMetaMap.set(d.sku, { sku: d.sku, name: d.name, category: d.category, status: d.status });
+        }
+        if (d.storeCategory) storeCatSet.add(d.storeCategory);
+      }
+
+      availableSkuList = Array.from(skuMetaMap.values());
+      if (comboboxInput) {
+        comboboxInput.value = currentSku;
+      }
+      renderSkuComboboxOptions();
+
+      // 顶端店铺维度：改自销售数据表的“店铺归类”
+      if (storeCatSelect) {
+        storeCatSelect.innerHTML = '<option value="ALL">全部店铺归类 (全渠道汇总)</option>';
+        Array.from(storeCatSet).sort().forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.text = cat;
+          if (cat === currentStoreCategory) opt.selected = true;
+          storeCatSelect.appendChild(opt);
+        });
+      }
+    }
+
+    function initEventHandlers() {
+      document.getElementById('btnLogout').addEventListener('click', handleSystemLogout);
+      document.getElementById('btnDownloadTemplate').addEventListener('click', downloadSampleExcelTemplate);
+
+      // 货号模糊搜索组合框交互逻辑
+      const comboboxInput = document.getElementById('skuComboboxInput');
+      const comboboxMenu = document.getElementById('skuComboboxMenu');
+      const comboboxToggle = document.getElementById('skuComboboxToggle');
+      const comboboxArrow = document.getElementById('skuComboboxArrow');
+
+      const openCombobox = () => {
+        renderSkuComboboxOptions(comboboxInput.value);
+        comboboxMenu.classList.remove('hidden');
+        if (comboboxArrow) comboboxArrow.classList.add('rotate-180');
+      };
+
+      const closeCombobox = () => {
+        comboboxMenu.classList.add('hidden');
+        if (comboboxArrow) comboboxArrow.classList.remove('rotate-180');
+      };
+
+      if (comboboxInput) {
+        comboboxInput.addEventListener('focus', openCombobox);
+        comboboxInput.addEventListener('input', (e) => {
+          openCombobox();
+        });
+        comboboxInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const query = comboboxInput.value.trim().toLowerCase();
+            const matched = availableSkuList.find(item => item.sku.toLowerCase() === query || item.sku.toLowerCase().includes(query));
+            if (matched) {
+              currentSku = matched.sku;
+              comboboxInput.value = matched.sku;
+              closeCombobox();
+              refreshAnalysis();
+            }
+          } else if (e.key === 'Escape') {
+            closeCombobox();
+          }
+        });
+      }
+
+      if (comboboxToggle) {
+        comboboxToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (comboboxMenu.classList.contains('hidden')) {
+            openCombobox();
+          } else {
+            closeCombobox();
+          }
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (comboboxMenu && !comboboxMenu.contains(e.target) && e.target !== comboboxInput && e.target !== comboboxToggle) {
+          closeCombobox();
+        }
+      });
+
+      // 顶端店铺归类维度切换监听
+      const storeCatSelect = document.getElementById('storeCategoryFilter');
+      if (storeCatSelect) {
+        storeCatSelect.addEventListener('change', (e) => {
+          currentStoreCategory = e.target.value;
+          refreshAnalysis();
+        });
+      }
+
+      // 渠道表现分析范围切换监听 (当前款 vs 全款)
+      const channelScopeSelect = document.getElementById('channelSkuScopeSelect');
+      if (channelScopeSelect) {
+        channelScopeSelect.addEventListener('change', (e) => {
+          channelSkuScope = e.target.value;
+          renderChannelAndStorePerformance();
+        });
+      }
+
+      document.getElementById('startDateInput').addEventListener('change', (e) => {
+        startDateFilter = e.target.value;
+        refreshAnalysis();
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+        showToast(`已更新开始日期: ${startDateFilter}`);
+      });
+
+      document.getElementById('endDateInput').addEventListener('change', (e) => {
+        endDateFilter = e.target.value;
+        refreshAnalysis();
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+        showToast(`已更新结束日期: ${endDateFilter}`);
+      });
+
+      document.getElementById('btnResetDates').addEventListener('click', () => {
+        initDatePickers(rawDataset);
+        refreshAnalysis();
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+        showToast('已重置回完整日期范围');
+      });
+
+      // 总库存条件筛选事件绑定
+      const invOpSelect = document.getElementById('invFilterOperator');
+      const invValInput = document.getElementById('invFilterValue');
+      const btnClearInv = document.getElementById('btnClearInvFilter');
+
+      const applyInventoryFilter = () => {
+        invFilterOp = invOpSelect.value;
+        const rawV = invValInput.value.trim();
+        if (rawV === '') {
+          invFilterVal = null;
+          btnClearInv.classList.add('hidden');
+        } else {
+          invFilterVal = parseFloat(rawV);
+          btnClearInv.classList.remove('hidden');
+        }
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+      };
+
+      invOpSelect.addEventListener('change', applyInventoryFilter);
+      invValInput.addEventListener('input', applyInventoryFilter);
+      btnClearInv.addEventListener('click', () => {
+        invValInput.value = '';
+        invFilterVal = null;
+        btnClearInv.classList.add('hidden');
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+      });
+
+      // 每页显示款数选择
+      document.getElementById('matrixPageSizeSelect').addEventListener('change', (e) => {
+        matrixPageSize = parseInt(e.target.value, 10) || 15;
+        matrixCurrentPage = 1;
+        renderMatrixTable();
+      });
+
+      // 大图模式每页显示款数选择
+      const galleryPageSizeSelect = document.getElementById('galleryPageSizeSelect');
+      if (galleryPageSizeSelect) {
+        galleryPageSizeSelect.addEventListener('change', (e) => {
+          galleryPageSize = parseInt(e.target.value, 10) || 10;
+          galleryCurrentPage = 1;
+          renderGalleryCards();
+        });
+      }
+
+      // 绑定表头自主点击排序事件 (点击表头切换升降序)
+      document.querySelectorAll('.matrix-sortable-th').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sortKey;
+          if (!key) return;
+          if (matrixSortColumn === key) {
+            matrixSortOrder = matrixSortOrder === 'asc' ? 'desc' : 'asc';
+          } else {
+            matrixSortColumn = key;
+            matrixSortOrder = 'desc';
+          }
+          const sortSelect = document.getElementById('matrixSortSelect');
+          if (sortSelect) sortSelect.value = 'default';
+          matrixCurrentPage = 1;
+          galleryCurrentPage = 1;
+          renderMatrixTable();
+          renderGalleryCards();
+        });
+      });
+
+      document.getElementById('matrixSortSelect').addEventListener('change', (e) => {
+        currentSortMode = e.target.value;
+        matrixSortColumn = ''; // 使用下拉预设排序时清空列排序
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+      });
+
+      const slider = document.getElementById('targetMarkupSlider');
+      const numInput = document.getElementById('customMarkupInput');
+      const displaySpan = document.getElementById('activeMarkupDisplay');
+
+      const applyMarkupChange = (val) => {
+        selectedTargetMarkup = val;
+        if (slider) slider.value = val;
+        if (numInput) numInput.value = val.toFixed(2);
+        if (displaySpan) displaySpan.innerText = val.toFixed(2);
+        for (const key in skuCustomMarkupMap) {
+          delete skuCustomMarkupMap[key];
+        }
+        renderMatrixTable();
+        renderGalleryCards();
+      };
+
+      if (slider) {
+        slider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val)) applyMarkupChange(val);
+        });
+      }
+
+      if (numInput) {
+        numInput.addEventListener('change', (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val) && val >= 1.0) {
+            applyMarkupChange(val);
+          }
+        });
+      }
+
+      const multiInput = document.getElementById('skuMultiPasteInput');
+      const clearBtn = document.getElementById('btnClearSkuPaste');
+      
+      const applyPasteFilter = () => {
+        const val = multiInput.value.trim();
+        if (!val) {
+          filterPastedSkus = [];
+          clearBtn.classList.add('hidden');
+        } else {
+          filterPastedSkus = val.split(/[\s,，;\n\t]+/).filter(Boolean);
+          clearBtn.classList.remove('hidden');
+        }
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+      };
+
+      document.getElementById('btnApplySkuPaste').addEventListener('click', applyPasteFilter);
+      multiInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyPasteFilter();
+      });
+      clearBtn.addEventListener('click', () => {
+        multiInput.value = '';
+        filterPastedSkus = [];
+        clearBtn.classList.add('hidden');
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        renderMatrixTable();
+        renderGalleryCards();
+      });
+
+      document.getElementById('btnCloseSkuTrendModal').addEventListener('click', closeSkuTrendModal);
+      document.getElementById('btnCloseModalBottom').addEventListener('click', closeSkuTrendModal);
+      document.getElementById('skuTrendModal').addEventListener('click', (e) => {
+        if (e.target.id === 'skuTrendModal') closeSkuTrendModal();
+      });
+
+      // 绑定图片放大预览关闭事件
+      document.getElementById('btnCloseImagePreview').addEventListener('click', closeImagePreviewModal);
+      document.getElementById('imagePreviewModal').addEventListener('click', (e) => {
+        if (e.target.id === 'imagePreviewModal') closeImagePreviewModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeImagePreviewModal();
+          closeSkuTrendModal();
+        }
+      });
+
+      document.addEventListener('click', () => {
+        closeAllDropdownPanels();
+      });
+
+      const resetAllMultiFiltersBtn = document.getElementById('btnResetMultiFilters');
+      if (resetAllMultiFiltersBtn) {
+        resetAllMultiFiltersBtn.addEventListener('click', () => {
+          filterSelectedStoreCats.clear();
+          filterSelectedStatuses.clear();
+          filterSelectedYears.clear();
+          filterSelectedSeasons.clear();
+          filterSelectedCategories.clear();
+          matrixCurrentPage = 1;
+          galleryCurrentPage = 1;
+          renderMultiFilterDropdowns();
+          renderMatrixTable();
+          renderGalleryCards();
+          showToast('已重置全部多维筛选条件');
+        });
+      }
+
+      document.getElementById('btnSampleData').addEventListener('click', () => {
+        initDataFromPreset();
+        currentSku = 'DWN-801';
+        currentStoreCategory = 'ALL';
+        currentSortMode = 'default';
+        matrixSortColumn = '';
+        matrixSortOrder = 'desc';
+        matrixCurrentPage = 1;
+        galleryCurrentPage = 1;
+        invFilterVal = null;
+        document.getElementById('invFilterValue').value = '';
+        document.getElementById('btnClearInvFilter').classList.add('hidden');
+        document.getElementById('matrixSortSelect').value = 'default';
+        filterPastedSkus = [];
+        filterSelectedStoreCats.clear();
+        filterSelectedStatuses.clear();
+        filterSelectedYears.clear();
+        filterSelectedSeasons.clear();
+        filterSelectedCategories.clear();
+        for (const k in skuCustomMarkupMap) delete skuCustomMarkupMap[k];
+        document.getElementById('skuMultiPasteInput').value = '';
+        document.getElementById('btnClearSkuPaste').classList.add('hidden');
+        
+        const sl = document.getElementById('targetMarkupSlider');
+        const ni = document.getElementById('customMarkupInput');
+        const ds = document.getElementById('activeMarkupDisplay');
+        if (sl) sl.value = 2.4;
+        if (ni) ni.value = '2.40';
+        if (ds) ds.innerText = '2.40';
+        selectedTargetMarkup = 2.4;
+
+        initDatePickers(rawDataset);
+        updateDropdowns();
+        renderMultiFilterDropdowns();
+        refreshAnalysis();
+        showToast('已重置回完整销售与库存演示数据');
+      });
+
+      // 导入 Excel 入口
+      document.getElementById('excelFileInput').addEventListener('change', handleExcelUpload);
+      document.getElementById('btnExportData').addEventListener('click', exportResultsToCSV);
+      document.getElementById('btnExportPDF').addEventListener('click', exportResultsToPDF);
+    }
+
+    // -------------------------------------------------------------
+    // 7. 生成并下载标准 Excel 导入示例模板
+    // -------------------------------------------------------------
+    function downloadSampleExcelTemplate() {
+      const sampleSalesRows = [
+        {
+          '货号': 'DWN-801',
+          '店铺': '天猫官方旗舰店',
+          '日期': '2026-10-25',
+          '销量': 120,
+          '销额': 63480,
+          '图片链接': 'https://images.unsplash.com/photo-1544923246-77307dd654cb?w=300&q=80',
+          '年份': '2025',
+          '季节': '冬季',
+          '商品类目': '羽绒服',
+          '成本': 180,
+          '货品状态': '正价',
+          '店铺归类': '电商线上'
+        },
+        {
+          '货号': 'CT-502',
+          '店铺': '京东自营旗舰店',
+          '日期': '2026-10-25',
+          '销量': 45,
+          '销额': 35955,
+          '图片链接': 'https://images.unsplash.com/photo-1539533018447-63fcce667883?w=300&q=80',
+          '年份': '2025',
+          '季节': '秋冬',
+          '商品类目': '大衣',
+          '成本': 260,
+          '货品状态': '正价',
+          '店铺归类': '电商线上'
+        },
+        {
+          '货号': 'SW-303',
+          '店铺': '华东直营旗舰店',
+          '日期': '2026-10-25',
+          '销量': 95,
+          '销额': 18905,
+          '图片链接': 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300&q=80',
+          '年份': '2025',
+          '季节': '秋季',
+          '商品类目': '针织衫',
+          '成本': 65,
+          '货品状态': '平销',
+          '店铺归类': '线下正价店'
+        }
+      ];
+
+      const sampleInventoryRows = [
+        {
+          '货号': 'DWN-801',
+          '在途库存': 380,
+          '在仓库存': 1420,
+          '总库存': 1800
+        },
+        {
+          '货号': 'CT-502',
+          '在途库存': 210,
+          '在仓库存': 850,
+          '总库存': 1060
+        },
+        {
+          '货号': 'SW-303',
+          '在途库存': 600,
+          '在仓库存': 2600,
+          '总库存': 3200
+        }
+      ];
+
+      const sampleAuxRows = [
+        { '字段名称': '销售数据表', '说明': '包含货号、店铺、日期、销量、销额、图片链接、年份、季节、商品类目、成本、货品状态、店铺归类等' },
+        { '字段名称': '库存数据表', '说明': '包含货号、在途库存、在仓库存、总库存' },
+        { '字段名称': '计算公式', '说明': '售罄率 = 累计销量 / (总库存 + 累计销量)' }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const wsSales = XLSX.utils.json_to_sheet(sampleSalesRows);
+      const wsInventory = XLSX.utils.json_to_sheet(sampleInventoryRows);
+      const wsAux = XLSX.utils.json_to_sheet(sampleAuxRows);
+
+      XLSX.utils.book_append_sheet(wb, wsSales, '销售数据表');
+      XLSX.utils.book_append_sheet(wb, wsInventory, '库存数据表');
+      XLSX.utils.book_append_sheet(wb, wsAux, '辅助表');
+
+      XLSX.writeFile(wb, '商品适销价与决策分析系统_标准导入模板.xlsx');
+      showToast('示例导入模板已生成并下载');
+    }
+
+    // -------------------------------------------------------------
+    // 8. 高性能超速 Excel 解析与预编译索引引擎 (支撑数十万行秒级加载)
+    // -------------------------------------------------------------
+
+    // 超快数值解析：针对纯数字避免额外正则与字符串分配
+    function fastCleanNumber(val, defaultVal = 0) {
+      if (val === null || val === undefined || val === '') return defaultVal;
+      if (typeof val === 'number') return isNaN(val) ? defaultVal : val;
+      const str = String(val).trim();
+      if (!str) return defaultVal;
+      if (str.indexOf(',') === -1 && str.indexOf('¥') === -1 && str.indexOf('￥') === -1 && str.indexOf('$') === -1) {
+        const num = parseFloat(str);
+        return isNaN(num) ? defaultVal : num;
+      }
+      const cleanStr = str.replace(/[¥￥$,\s]/g, '');
+      const num = parseFloat(cleanStr);
+      return isNaN(num) ? defaultVal : num;
+    }
+
+    // 超快日期解析：兼容 Excel 序列号 (如 45230) 与各种格式
+    function fastFormatDate(val) {
+      if (!val) return '';
+      if (typeof val === 'number') {
+        if (val > 20000 && val < 70000) {
+          const unixTime = (val - 25569) * 86400000;
+          const d = new Date(unixTime);
+          return d.toISOString().slice(0, 10);
+        }
+        return String(val);
+      }
+      if (val instanceof Date) return val.toISOString().slice(0, 10);
+      const s = String(val).trim();
+      if (s.length >= 10 && s[4] === '-' && s[7] === '-') return s.slice(0, 10);
+      const cleaned = s.replace(/[./]/g, '-');
+      const match = cleaned.match(/\d{4}-\d{1,2}-\d{1,2}/);
+      if (match) {
+        const p = match[0].split('-');
+        return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+      }
+      return s.slice(0, 10);
+    }
+
+    function safeMax(arr, defaultVal = 0) {
+      if (!arr || arr.length === 0) return defaultVal;
+      let m = -Infinity;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] > m) m = arr[i];
+      }
+      return m === -Infinity ? defaultVal : m;
+    }
+
+    function safeMin(arr, defaultVal = 0) {
+      if (!arr || arr.length === 0) return defaultVal;
+      let m = Infinity;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] < m) m = arr[i];
+      }
+      return m === Infinity ? defaultVal : m;
+    }
+
+    // 内存紧凑型二维数组提取器 (支持 SheetJS dense 模式与传统模式)
+    function getSheetRows(ws) {
+      if (!ws) return [];
+      if (ws['!data'] && Array.isArray(ws['!data'])) {
+        const data = ws['!data'];
+        const rows = [];
+        for (let r = 0; r < data.length; r++) {
+          const rowArr = data[r];
+          if (!rowArr || !Array.isArray(rowArr)) {
+            rows.push([]);
+            continue;
+          }
+          const rVals = new Array(rowArr.length);
+          for (let c = 0; c < rowArr.length; c++) {
+            const cell = rowArr[c];
+            rVals[c] = cell && cell.v !== undefined ? cell.v : '';
+          }
+          rows.push(rVals);
+        }
+        return rows;
+      }
+      return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+    }
+
+    // 预编译字段索引寻找函数 (仅在表头行执行 1 次，返回列下标)
+    function findColIndex(headers, aliases) {
+      // 1. 精确匹配
+      for (let a = 0; a < aliases.length; a++) {
+        const target = aliases[a].toLowerCase().replace(/\s+/g, '');
+        for (let c = 0; c < headers.length; c++) {
+          const cleanH = headers[c].toLowerCase().replace(/\s+/g, '');
+          if (cleanH === target) return c;
+        }
+      }
+      // 2. 模糊包含匹配
+      for (let a = 0; a < aliases.length; a++) {
+        const target = aliases[a].toLowerCase().replace(/\s+/g, '');
+        for (let c = 0; c < headers.length; c++) {
+          const cleanH = headers[c].toLowerCase().replace(/\s+/g, '');
+          if (cleanH && (cleanH.includes(target) || target.includes(cleanH))) return c;
+        }
+      }
+      return -1;
+    }
+
+    // 显示与隐藏极速解析动画
+    function toggleDataLoading(show, message) {
+      const overlay = document.getElementById('dataLoadingOverlay');
+      const detail = document.getElementById('loadingOverlayDetail');
+      if (message && detail) detail.innerText = message;
+      if (show) {
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+      } else {
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 200);
+      }
+    }
+
+    // Excel 导入解析主函数 (数十万行秒级架构)
+    function handleExcelUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      toggleDataLoading(true, `正在读取 ${file.name} (大小: ${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        // 使用微延迟让加载遮罩成功绘制在界面上
+        setTimeout(() => {
+          try {
+            const startTime = performance.now();
+            const data = new Uint8Array(evt.target.result);
+
+            // 开启内存紧凑模式 dense，同时禁用不必要的样式与富文本解析
+            const workbook = XLSX.read(data, {
+              type: 'array',
+              dense: true,
+              cellDates: false,
+              cellStyles: false,
+              cellFormula: false,
+              cellHTML: false,
+              cellText: false
+            });
+
+            let salesSheet = null;
+            let inventorySheet = null;
+
+            // 1. 优先按工作表名称匹配
+            workbook.SheetNames.forEach(sheetName => {
+              const sLower = sheetName.toLowerCase();
+              if (sLower.includes('销售') || sLower.includes('sale') || sLower.includes('订单') || sLower.includes('流水') || sLower.includes('明细')) {
+                salesSheet = workbook.Sheets[sheetName];
+              } else if (sLower.includes('库存') || sLower.includes('stock') || sLower.includes('inventory') || sLower.includes('存货')) {
+                inventorySheet = workbook.Sheets[sheetName];
+              }
+            });
+
+            // 2. 兜底回退：如果没匹配到，第一张表为销售表，第二张表为库存表
+            if (!salesSheet) salesSheet = workbook.Sheets[workbook.SheetNames[0]];
+            if (!inventorySheet && workbook.SheetNames.length > 1) {
+              const otherSheet = workbook.Sheets[workbook.SheetNames[1]];
+              if (otherSheet !== salesSheet) inventorySheet = otherSheet;
+            }
+
+            // 3. 解析库存数据表
+            const newInventoryMap = {};
+            if (inventorySheet) {
+              const invRows = getSheetRows(inventorySheet);
+              if (invRows.length > 0) {
+                let invHeaderIdx = 0;
+                for (let r = 0; r < Math.min(15, invRows.length); r++) {
+                  const rowStr = (invRows[r] || []).map(c => String(c || '').toLowerCase().replace(/\s+/g, '')).join('|');
+                  if (rowStr.includes('货号') || rowStr.includes('款号') || rowStr.includes('sku') || rowStr.includes('库存')) {
+                    invHeaderIdx = r;
+                    break;
+                  }
+                }
+                const invHeaders = (invRows[invHeaderIdx] || []).map(h => String(h || '').trim());
+                const iSku = findColIndex(invHeaders, ['货号', '款号', '商品编码', 'sku', '编码']);
+                const iInT = findColIndex(invHeaders, ['在途库存', '在途', '在途数', '在途量', 'po库存']);
+                const iInW = findColIndex(invHeaders, ['在仓库存', '在仓', '库存', '实际库存', '现有库存', '可用库存']);
+                const iTot = findColIndex(invHeaders, ['总库存', '合计', '总计', '库存合计']);
+
+                for (let r = invHeaderIdx + 1; r < invRows.length; r++) {
+                  const row = invRows[r];
+                  if (!row) continue;
+                  const sku = iSku !== -1 ? String(row[iSku] ?? '').trim() : '';
+                  if (!sku) continue;
+                  const inTransit = iInT !== -1 ? fastCleanNumber(row[iInT], 0) : 0;
+                  const inWarehouse = iInW !== -1 ? fastCleanNumber(row[iInW], 0) : 0;
+                  let total = iTot !== -1 ? fastCleanNumber(row[iTot], 0) : (inTransit + inWarehouse);
+                  if (total <= 0) total = inTransit + inWarehouse;
+                  newInventoryMap[sku] = { inTransit, inWarehouse, total };
+                }
+              }
+            }
+
+            // 4. 解析销售数据表 (预编译列下标，单遍流式读取数十万行)
+            const salesRows = getSheetRows(salesSheet);
+            if (!salesRows || salesRows.length === 0) {
+              toggleDataLoading(false);
+              showToast('销售数据表内容为空或无法识别，请核对是否包含表头', true);
+              return;
+            }
+
+            // 智能定位真实表头行 (跳过前置大标题)
+            const headerKeywords = ['货号', '款号', '编码', 'sku', '销量', '数量', '销额', '金额', '库存', '店铺', '日期', '成本', '单价'];
+            let headerRowIndex = 0;
+            for (let r = 0; r < Math.min(25, salesRows.length); r++) {
+              const row = salesRows[r];
+              if (!Array.isArray(row) || row.length === 0) continue;
+              let matches = 0;
+              for (let c = 0; c < row.length; c++) {
+                const cellStr = String(row[c] || '').toLowerCase().replace(/\s+/g, '');
+                if (!cellStr) continue;
+                for (let k = 0; k < headerKeywords.length; k++) {
+                  if (cellStr.includes(headerKeywords[k])) {
+                    matches++;
+                    break;
+                  }
+                }
+              }
+              if (matches >= 2) {
+                headerRowIndex = r;
+                break;
+              }
+            }
+
+            const cleanHeaders = (salesRows[headerRowIndex] || []).map(h => String(h || '').trim());
+
+            // 一次性预编译所有核心列下标 (O(1) 访问)
+            const colSku = findColIndex(cleanHeaders, ['货号', '款号', '商品编码', 'sku', '货品编码', '款号/货号', '产品编号', '品号', '代码', '条码']);
+            const colStore = findColIndex(cleanHeaders, ['店铺', '店铺名称', '门店', '渠道', '网店', '所属店铺', '店名', '销售渠道']);
+            const colDate = findColIndex(cleanHeaders, ['日期', '销售日期', '成交日期', '订单日期', '时间', '业务日期', '发货日期', '开单日期']);
+            const colSales = findColIndex(cleanHeaders, ['销量', '销售数量', '实销数', '实销数量', '数量', '销售件数', '实发数量', '件数', '出库数量']);
+            const colRev = findColIndex(cleanHeaders, ['销额', '销售额', '销售金额', '实销额', '金额', '实付金额', '实收金额', '总金额', '成交金额', '结算金额']);
+            const colPrice = findColIndex(cleanHeaders, ['件单价', '单价', '售价', '销售单价', '吊牌价', '现价', '成交均价']);
+            const colCost = findColIndex(cleanHeaders, ['成本', '单位成本', '成本价', '进货价', '采购成本', '采购价', '成本金额']);
+            const colImg = findColIndex(cleanHeaders, ['图片链接', '图片', '主图', '商品图片', '图片url', '图片地址', '链接']);
+            const colYear = findColIndex(cleanHeaders, ['年份', '年度', '年']);
+            const colSeason = findColIndex(cleanHeaders, ['季节', '季别', '波段', '季']);
+            const colCategory = findColIndex(cleanHeaders, ['商品类目', '类目', '品类', '分类', '大类', '品名']);
+            const colStatus = findColIndex(cleanHeaders, ['货品状态', '状态', '销售状态', '生命周期']);
+            const colStoreCat = findColIndex(cleanHeaders, ['店铺归类', '店铺类型', '渠道类型', '渠道归类', '经营模式', '渠道分类']);
+
+            // 同表库存列识别
+            const colInW = findColIndex(cleanHeaders, ['在仓库存', '在仓', '实际库存', '现有库存', '可用库存']);
+            const colInT = findColIndex(cleanHeaders, ['在途库存', '在途', '在途数', '在途量', 'po库存']);
+            const colTotInv = findColIndex(cleanHeaders, ['总库存', '库存合计', '总计', '合计']);
+
+            const parsed = [];
+            const totalRows = salesRows.length;
+
+            for (let r = headerRowIndex + 1; r < totalRows; r++) {
+              const row = salesRows[r];
+              if (!row || row.length === 0) continue;
+
+              const sku = colSku !== -1 ? String(row[colSku] ?? '').trim() : '';
+              if (!sku) continue;
+
+              const sales = colSales !== -1 ? fastCleanNumber(row[colSales], 0) : 0;
+              if (sales <= 0) continue;
+
+              let revenue = colRev !== -1 ? fastCleanNumber(row[colRev], 0) : 0;
+              if (revenue <= 0 && colPrice !== -1) {
+                const uPrice = fastCleanNumber(row[colPrice], 0);
+                if (uPrice > 0) revenue = sales * uPrice;
+              }
+
+              const store = colStore !== -1 ? String(row[colStore] ?? '默认店铺').trim() : '默认店铺';
+              const rawDate = colDate !== -1 ? row[colDate] : '';
+              const date = fastFormatDate(rawDate) || '2026-10-28';
+              const time = new Date(date).getTime() || 0;
+
+              const img = colImg !== -1 ? String(row[colImg] ?? '').trim() : '';
+              const year = colYear !== -1 ? String(row[colYear] ?? '2025').trim() : '2025';
+              const season = colSeason !== -1 ? String(row[colSeason] ?? '通用').trim() : '通用';
+              const category = colCategory !== -1 ? String(row[colCategory] ?? '常规').trim() : '常规';
+              const cost = colCost !== -1 ? fastCleanNumber(row[colCost], 0) : 0;
+              const status = colStatus !== -1 ? String(row[colStatus] ?? '正价').trim() : '正价';
+              const storeCategory = colStoreCat !== -1 ? String(row[colStoreCat] ?? '全渠道').trim() : '全渠道';
+
+              const price = sales > 0 ? (revenue / sales) : 0;
+              const markup = (cost > 0 && price > 0) ? (price / cost) : 2.4;
+
+              // 同表提取库存
+              if (colInW !== -1 || colTotInv !== -1) {
+                if (!newInventoryMap[sku]) {
+                  const inW = colInW !== -1 ? fastCleanNumber(row[colInW], 0) : 0;
+                  const inT = colInT !== -1 ? fastCleanNumber(row[colInT], 0) : 0;
+                  let tot = colTotInv !== -1 ? fastCleanNumber(row[colTotInv], 0) : (inW + inT);
+                  if (tot <= 0) tot = inW + inT;
+                  newInventoryMap[sku] = { inWarehouse: inW, inTransit: inT, total: tot };
+                }
+              }
+
+              parsed.push({
+                sku,
+                store,
+                date,
+                time,
+                sales,
+                revenue,
+                img: img || 'https://placehold.co/120x120/e2e8f0/64748b?text=SKU',
+                year,
+                season,
+                category,
+                cost: cost > 0 ? cost : 50,
+                status,
+                storeCategory,
+                price,
+                markup
+              });
+            }
+
+            if (parsed.length === 0) {
+              toggleDataLoading(false);
+              showToast('销售数据表内容为空或未识别到有效销售行，请核对表头字段', true);
+              return;
+            }
+
+            // 更新全局数据集与库存映射
+            rawDataset = parsed;
+            inventoryMap = Object.assign(inventoryMap, newInventoryMap);
+
+            currentSku = rawDataset[0].sku;
+            currentStoreCategory = 'ALL';
+            currentSortMode = 'default';
+            matrixCurrentPage = 1;
+            galleryCurrentPage = 1;
+            invFilterVal = null;
+            if (document.getElementById('invFilterValue')) document.getElementById('invFilterValue').value = '';
+            if (document.getElementById('btnClearInvFilter')) document.getElementById('btnClearInvFilter').classList.add('hidden');
+            if (document.getElementById('matrixSortSelect')) document.getElementById('matrixSortSelect').value = 'default';
+            
+            filterPastedSkus = [];
+            filterSelectedStoreCats.clear();
+            filterSelectedStatuses.clear();
+            filterSelectedYears.clear();
+            filterSelectedSeasons.clear();
+            filterSelectedCategories.clear();
+            for (const k in skuCustomMarkupMap) delete skuCustomMarkupMap[k];
+            if (document.getElementById('skuMultiPasteInput')) document.getElementById('skuMultiPasteInput').value = '';
+            if (document.getElementById('btnClearSkuPaste')) document.getElementById('btnClearSkuPaste').classList.add('hidden');
+
+            initDatePickers(rawDataset);
+            updateDropdowns();
+            renderMultiFilterDropdowns();
+            refreshAnalysis();
+
+            const costMs = Math.round(performance.now() - startTime);
+            toggleDataLoading(false);
+            showToast(`成功极速导入 ${parsed.length.toLocaleString()} 条销售记录，涉及 ${Object.keys(newInventoryMap).length || new Set(parsed.map(p => p.sku)).size} 个款号 (耗时: ${costMs}ms)`);
+
+          } catch (err) {
+            console.error('Excel 解析错误:', err);
+            toggleDataLoading(false);
+            showToast('Excel 文件解析失败，请确保格式正确且未损坏: ' + (err.message || ''), true);
+          }
+        }, 30);
+      };
+
+      reader.onerror = function() {
+        toggleDataLoading(false);
+        showToast('读取文件发生错误', true);
+      };
+
+      reader.readAsArrayBuffer(file);
+      e.target.value = ''; // 允许重复上传同一文件
+    }
+
+    // 导出分析报表 (受筛选器与排序联动控制，直接内嵌商品图片，无需图片链接，兼容 WPS 与各版本 Excel)
+    function exportResultsToCSV() {
+      const rowsToExport = getFilteredMatrixRows();
+      if (!rowsToExport || rowsToExport.length === 0) {
+        showToast('当前筛选条件下暂无数据可导出', true);
+        return;
+      }
+
+      // 构建筛选器上下文描述文本
+      const filterDesc = [];
+      if (startDateFilter || endDateFilter) filterDesc.push(`日期: ${startDateFilter || '起始'} 至 ${endDateFilter || '截止'}`);
+      if (filterSelectedYears.size > 0) filterDesc.push(`年份: ${Array.from(filterSelectedYears).join('/')}`);
+      if (filterSelectedSeasons.size > 0) filterDesc.push(`季节: ${Array.from(filterSelectedSeasons).join('/')}`);
+      if (filterSelectedCategories.size > 0) filterDesc.push(`类目: ${Array.from(filterSelectedCategories).join('/')}`);
+      if (filterSelectedStatuses.size > 0) filterDesc.push(`状态: ${Array.from(filterSelectedStatuses).join('/')}`);
+      if (filterSelectedStoreCats.size > 0) filterDesc.push(`店铺归类: ${Array.from(filterSelectedStoreCats).join('/')}`);
+      if (invFilterVal !== null) filterDesc.push(`总库存: ${invFilterOp} ${invFilterVal}`);
+      if (filterPastedSkus.length > 0) filterDesc.push(`指定货号: ${filterPastedSkus.length}款`);
+      const filterDescStr = filterDesc.length > 0 ? filterDesc.join(' | ') : '全部范围 (无特定过滤)';
+
+      let tableRowsHtml = '';
+      let sumCost = 0, sumTotalSales = 0, sumSales7d = 0, sumPrevSales7d = 0;
+      let sumSales30d = 0, sumPrevSales30d = 0, sumInWarehouse = 0, sumInTransit = 0, sumTotalInventory = 0;
+      let sumRev = 0, sumTargetRev = 0;
+
+      rowsToExport.forEach(item => {
+        sumCost += item.cost;
+        sumTotalSales += item.totalSales;
+        sumSales7d += item.sales7d;
+        sumPrevSales7d += item.prevSales7d;
+        sumSales30d += item.sales30d;
+        sumPrevSales30d += item.prevSales30d;
+        sumInWarehouse += item.inWarehouse;
+        sumInTransit += item.inTransit;
+        sumTotalInventory += item.totalInventory;
+        sumRev += item.totalRev;
+        sumTargetRev += (item.cost * item.targetMarkup);
+
+        tableRowsHtml += `
+          <tr style="height: 60px;">
+            <td style="text-align: center; vertical-align: middle; mso-number-format:'\\@'; font-weight: bold;">${item.sku}</td>
+            <td style="text-align: center; vertical-align: middle;">
+              ${item.img ? `<img src="${item.img}" width="50" height="50" style="width:50px;height:50px;object-fit:cover;border-radius:4px;display:block;margin:0 auto;" />` : '--'}
+            </td>
+            <td style="text-align: center; vertical-align: middle; font-weight: bold;">${item.totalSales}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.sales7d}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.wow7d > 0 ? '+' : ''}${item.wow7d}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.sales30d}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.mom30d > 0 ? '+' : ''}${item.mom30d}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.inWarehouse}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.inTransit}</td>
+            <td style="text-align: center; vertical-align: middle; font-weight: bold;">${item.totalInventory}</td>
+            <td style="text-align: center; vertical-align: middle; font-weight: bold; color: #059669;">${item.sellThroughRate.toFixed(1)}%</td>
+            <td style="text-align: center; vertical-align: middle;">¥${item.cost.toFixed(1)}</td>
+            <td style="text-align: center; vertical-align: middle;">¥${item.currentAvgPrice.toFixed(1)}</td>
+            <td style="text-align: center; vertical-align: middle;">${item.currentMarkup.toFixed(2)}x</td>
+            <td style="text-align: center; vertical-align: middle; font-weight: bold; color: #4338ca;">${item.targetMarkup.toFixed(2)}x</td>
+            <td style="text-align: center; vertical-align: middle; font-weight: bold; color: #4338ca;">¥${Math.round(item.targetPrice)}</td>
+          </tr>
+        `;
+      });
+
+      // 汇总行核算
+      const avgCost = rowsToExport.length > 0 ? (sumCost / rowsToExport.length) : 0;
+      const overallAvgPrice = sumTotalSales > 0 ? (sumRev / sumTotalSales) : 0;
+      const overallAvgMarkup = avgCost > 0 ? (overallAvgPrice / avgCost) : 0;
+      const avgTargetPrice = rowsToExport.length > 0 ? (sumTargetRev / rowsToExport.length) : 0;
+      const avgTargetMarkup = avgCost > 0 ? (avgTargetPrice / avgCost) : selectedTargetMarkup;
+      const totalWow7d = sumSales7d - sumPrevSales7d;
+      const totalMom30d = sumSales30d - sumPrevSales30d;
+      const totalDenom = sumTotalInventory + sumTotalSales;
+      const overallSellThrough = totalDenom > 0 ? (sumTotalSales / totalDenom * 100) : 0;
+
+      const footerHtml = `
+        <tr style="height: 38px; background-color: #f1f5f9; font-weight: bold;">
+          <td style="text-align: center; vertical-align: middle;">总计 / 平均</td>
+          <td style="text-align: center; vertical-align: middle; color: #64748b;">共 ${rowsToExport.length} 款</td>
+          <td style="text-align: center; vertical-align: middle; color: #3730a3;">${sumTotalSales}</td>
+          <td style="text-align: center; vertical-align: middle;">${sumSales7d}</td>
+          <td style="text-align: center; vertical-align: middle;">${totalWow7d > 0 ? '+' : ''}${totalWow7d}</td>
+          <td style="text-align: center; vertical-align: middle;">${sumSales30d}</td>
+          <td style="text-align: center; vertical-align: middle;">${totalMom30d > 0 ? '+' : ''}${totalMom30d}</td>
+          <td style="text-align: center; vertical-align: middle;">${sumInWarehouse}</td>
+          <td style="text-align: center; vertical-align: middle;">${sumInTransit}</td>
+          <td style="text-align: center; vertical-align: middle;">${sumTotalInventory}</td>
+          <td style="text-align: center; vertical-align: middle; color: #059669;">${overallSellThrough.toFixed(1)}%</td>
+          <td style="text-align: center; vertical-align: middle;">¥${avgCost.toFixed(1)}</td>
+          <td style="text-align: center; vertical-align: middle;">¥${overallAvgPrice.toFixed(1)}</td>
+          <td style="text-align: center; vertical-align: middle;">${overallAvgMarkup.toFixed(2)}x</td>
+          <td style="text-align: center; vertical-align: middle; color: #4338ca;">${avgTargetMarkup.toFixed(2)}x</td>
+          <td style="text-align: center; vertical-align: middle; color: #4338ca;">¥${Math.round(avgTargetPrice)}</td>
+        </tr>
+      `;
+
+      const excelHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 11px; }
+            th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 6px; text-align: center; vertical-align: middle; }
+            td { border: 1px solid #e2e8f0; padding: 6px 6px; text-align: center; vertical-align: middle; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <thead>
+              <tr style="height: 32px;">
+                <th colspan="16" style="background-color: #4338ca; color: #ffffff; font-size: 13px; text-align: left; padding-left: 12px;">
+                  商品适销价与倍率决策分析报表 (${filterDescStr} · 共 ${rowsToExport.length} 款)
+                </th>
+              </tr>
+              <tr>
+                <th style="width: 100px;">货号</th>
+                <th style="width: 70px;">商品图片</th>
+                <th style="width: 80px;">累计销量</th>
+                <th style="width: 80px;">近7天销量</th>
+                <th style="width: 75px;">7天环比</th>
+                <th style="width: 85px;">近30天销量</th>
+                <th style="width: 75px;">30天环比</th>
+                <th style="width: 75px;">在仓库存</th>
+                <th style="width: 75px;">在途库存</th>
+                <th style="width: 75px;">总库存</th>
+                <th style="width: 75px; color: #047857;">售罄率</th>
+                <th style="width: 75px;">成本 (C)</th>
+                <th style="width: 80px;">当前均价</th>
+                <th style="width: 75px;">当前倍率</th>
+                <th style="width: 85px; background-color: #e0e7ff; color: #3730a3;">目标倍率</th>
+                <th style="width: 85px; background-color: #e0e7ff; color: #3730a3;">对应价格</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+            <tfoot>
+              ${footerHtml}
+            </tfoot>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `商品适销价与决策分析表_${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      showToast(`已成功导出 ${rowsToExport.length} 款筛选结果报表（含图片，兼容 WPS 与 Excel）`);
+    }
+
+    // 导出为横向水平排版 PDF 报表 (防水平截断、防分页腰斩)
+    function exportResultsToPDF() {
+      const rowsToExport = getFilteredMatrixRows();
+      if (!rowsToExport || rowsToExport.length === 0) {
+        showToast('当前筛选条件下暂无数据可导出为 PDF', true);
+        return;
+      }
+
+      showToast(`正在生成横向 PDF 预览文档 (共 ${rowsToExport.length} 款)...`);
+
+      // 构建筛选器上下文描述文本
+      const filterDesc = [];
+      if (startDateFilter || endDateFilter) filterDesc.push(`日期范围: ${startDateFilter || '起始'} 至 ${endDateFilter || '截止'}`);
+      if (filterSelectedYears.size > 0) filterDesc.push(`年份: ${Array.from(filterSelectedYears).join('/')}`);
+      if (filterSelectedSeasons.size > 0) filterDesc.push(`季节: ${Array.from(filterSelectedSeasons).join('/')}`);
+      if (filterSelectedCategories.size > 0) filterDesc.push(`类目: ${Array.from(filterSelectedCategories).join('/')}`);
+      if (filterSelectedStatuses.size > 0) filterDesc.push(`状态: ${Array.from(filterSelectedStatuses).join('/')}`);
+      if (filterSelectedStoreCats.size > 0) filterDesc.push(`店铺归类: ${Array.from(filterSelectedStoreCats).join('/')}`);
+      if (invFilterVal !== null) filterDesc.push(`总库存: ${invFilterOp} ${invFilterVal}`);
+      if (filterPastedSkus.length > 0) filterDesc.push(`指定货号: ${filterPastedSkus.length} 款`);
+      const filterSummary = filterDesc.length > 0 ? filterDesc.join(' | ') : '全部范围 (无特定过滤)';
+
+      let sumCost = 0, sumTotalSales = 0, sumSales7d = 0, sumPrevSales7d = 0;
+      let sumSales30d = 0, sumPrevSales30d = 0, sumInWarehouse = 0, sumInTransit = 0, sumTotalInventory = 0;
+      let sumRev = 0, sumTargetRev = 0;
+
+      let tbodyRows = '';
+      rowsToExport.forEach(r => {
+        sumCost += r.cost;
+        sumTotalSales += r.totalSales;
+        sumSales7d += r.sales7d;
+        sumPrevSales7d += r.prevSales7d;
+        sumSales30d += r.sales30d;
+        sumPrevSales30d += r.prevSales30d;
+        sumInWarehouse += r.inWarehouse;
+        sumInTransit += r.inTransit;
+        sumTotalInventory += r.totalInventory;
+        sumRev += r.totalRev;
+        sumTargetRev += (r.cost * r.targetMarkup);
+
+        const wowClass = r.wow7d > 0 ? 'color: #2563eb; font-weight: bold;' : (r.wow7d < 0 ? 'color: #e11d48; font-weight: bold;' : 'color: #64748b;');
+        const momClass = r.mom30d > 0 ? 'color: #2563eb; font-weight: bold;' : (r.mom30d < 0 ? 'color: #e11d48; font-weight: bold;' : 'color: #64748b;');
+
+        // PDF 内嵌紧凑型高清 SVG 折线面积图
+        const spark7 = generateSparklineSVG(r.daily7, 62, 20, '#4f46e5');
+        const spark30 = generateSparklineSVG(r.daily30, 70, 20, '#0284c7');
+
+        tbodyRows += `
+          <tr>
+            <td style="font-weight: bold; color: #4338ca; text-decoration: underline;">${r.sku}</td>
+            <td>
+              ${r.img ? `<img src="${r.img}" class="sku-img" alt="${r.sku}" />` : '<span style="color:#94a3b8;">无图</span>'}
+            </td>
+            <td style="font-weight: bold; color: #0f172a;">${r.totalSales.toLocaleString()}</td>
+            <td>${r.sales7d.toLocaleString()}</td>
+            <td style="padding: 1px 0;">${spark7}</td>
+            <td style="${wowClass}">${r.wow7d > 0 ? '+' : ''}${r.wow7d.toLocaleString()}</td>
+            <td>${r.sales30d.toLocaleString()}</td>
+            <td style="padding: 1px 0;">${spark30}</td>
+            <td style="${momClass}">${r.mom30d > 0 ? '+' : ''}${r.mom30d.toLocaleString()}</td>
+            <td>${r.inWarehouse.toLocaleString()}</td>
+            <td style="color: #64748b;">${r.inTransit.toLocaleString()}</td>
+            <td style="font-weight: bold;">${r.totalInventory.toLocaleString()}</td>
+            <td style="font-weight: bold; color: #059669;">${r.sellThroughRate.toFixed(1)}%</td>
+            <td>¥${r.cost.toFixed(1)}</td>
+            <td style="font-weight: 600;">¥${r.currentAvgPrice.toFixed(1)}</td>
+            <td>${r.currentMarkup.toFixed(2)}x</td>
+            <td style="background-color: #eef2ff !important; font-weight: bold; color: #4338ca;">${r.targetMarkup.toFixed(2)}x</td>
+            <td style="background-color: #eef2ff !important; font-weight: bold; color: #4338ca;">¥${Math.round(r.targetPrice)}</td>
+          </tr>
+        `;
+      });
+
+      // 汇总行核算
+      const avgCost = rowsToExport.length > 0 ? (sumCost / rowsToExport.length) : 0;
+      const overallAvgPrice = sumTotalSales > 0 ? (sumRev / sumTotalSales) : 0;
+      const overallAvgMarkup = avgCost > 0 ? (overallAvgPrice / avgCost) : 0;
+      const avgTargetPrice = rowsToExport.length > 0 ? (sumTargetRev / rowsToExport.length) : 0;
+      const avgTargetMarkup = avgCost > 0 ? (avgTargetPrice / avgCost) : selectedTargetMarkup;
+      const totalWow7d = sumSales7d - sumPrevSales7d;
+      const totalMom30d = sumSales30d - sumPrevSales30d;
+      const totalDenom = sumTotalInventory + sumTotalSales;
+      const overallSellThrough = totalDenom > 0 ? (sumTotalSales / totalDenom * 100) : 0;
+
+      const pdfHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>商品适销价与倍率决策分析报表 (横向)</title>
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 7mm 6mm 7mm 6mm;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+            * { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+              margin: 0;
+              padding: 0;
+              color: #0f172a;
+              background: #fff;
+              font-size: 7.5pt;
+              line-height: 1.2;
+            }
+            .header-bar {
+              border-bottom: 2px solid #4f46e5;
+              padding-bottom: 5px;
+              margin-bottom: 6px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+            }
+            .title {
+              font-size: 13pt;
+              font-weight: 800;
+              color: #1e1b4b;
+              letter-spacing: -0.2px;
+            }
+            .meta-info {
+              font-size: 7.5pt;
+              color: #64748b;
+              margin-top: 2px;
+            }
+            .filter-strip {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 4px;
+              padding: 4px 8px;
+              font-size: 7pt;
+              color: #334155;
+              margin-bottom: 6px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              table-layout: fixed;
+              page-break-inside: auto;
+            }
+            thead {
+              display: table-header-group;
+            }
+            tfoot {
+              display: table-footer-group;
+            }
+            tr {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              page-break-after: auto;
+            }
+            th {
+              background-color: #f1f5f9 !important;
+              color: #0f172a;
+              font-weight: 800;
+              border: 1px solid #cbd5e1;
+              padding: 4px 1px;
+              font-size: 7.5pt;
+              text-align: center;
+              vertical-align: middle;
+            }
+            td {
+              border: 1px solid #e2e8f0;
+              padding: 3px 1px;
+              font-size: 7.5pt;
+              text-align: center;
+              vertical-align: middle;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+            .sku-img {
+              width: 32px;
+              height: 32px;
+              border-radius: 4px;
+              object-fit: cover;
+              display: block;
+              margin: 0 auto;
+              border: 1px solid #e2e8f0;
+            }
+            .tfoot-tr td {
+              background-color: #f8fafc !important;
+              font-weight: 800;
+              border-top: 2px solid #94a3b8;
+              font-size: 7.5pt;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-bar">
+            <div>
+              <div class="title">商品适销价与倍率决策分析报表</div>
+              <div class="meta-info">企业级量利决策中枢 · 零售价格弹性拟合与库存售罄分析</div>
+            </div>
+            <div style="text-align: right; font-size: 7.5pt; color: #64748b;">
+              <div>导出时间: ${new Date().toLocaleString()}</div>
+              <div style="font-weight: bold; color: #4338ca;">纳入分析款式: 共 ${rowsToExport.length} 款</div>
+            </div>
+          </div>
+
+          <div class="filter-strip">
+            <strong>当前过滤条件:</strong> ${filterSummary}
+          </div>
+
+          <table>
+            <colgroup>
+              <col style="width: 6.5%;">
+              <col style="width: 4.5%;">
+              <col style="width: 5.5%;">
+              <col style="width: 5.0%;">
+              <col style="width: 6.5%;">
+              <col style="width: 4.5%;">
+              <col style="width: 5.5%;">
+              <col style="width: 7.0%;">
+              <col style="width: 4.5%;">
+              <col style="width: 5.0%;">
+              <col style="width: 4.5%;">
+              <col style="width: 5.5%;">
+              <col style="width: 5.5%;">
+              <col style="width: 5.0%;">
+              <col style="width: 5.5%;">
+              <col style="width: 5.0%;">
+              <col style="width: 7.0%;">
+              <col style="width: 7.5%;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>货号</th>
+                <th>图片</th>
+                <th>累计销量</th>
+                <th>近7天</th>
+                <th>7天趋势</th>
+                <th>7天环比</th>
+                <th>近30天</th>
+                <th>30天趋势</th>
+                <th>30天环比</th>
+                <th>在仓库存</th>
+                <th>在途库存</th>
+                <th>总库存</th>
+                <th style="color: #047857;">售罄率</th>
+                <th>成本 (C)</th>
+                <th>当前均价</th>
+                <th>当前倍率</th>
+                <th style="background-color: #e0e7ff !important; color: #3730a3;">目标倍率</th>
+                <th style="background-color: #e0e7ff !important; color: #3730a3;">对应价格</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tbodyRows}
+            </tbody>
+            <tfoot>
+              <tr class="tfoot-tr">
+                <td>总计/平均</td>
+                <td style="color: #64748b;">${rowsToExport.length}款</td>
+                <td style="color: #3730a3;">${sumTotalSales.toLocaleString()}</td>
+                <td>${sumSales7d.toLocaleString()}</td>
+                <td style="color: #94a3b8;">-</td>
+                <td style="${totalWow7d >= 0 ? 'color:#2563eb' : 'color:#e11d48'}">${totalWow7d > 0 ? '+' : ''}${totalWow7d.toLocaleString()}</td>
+                <td>${sumSales30d.toLocaleString()}</td>
+                <td style="color: #94a3b8;">-</td>
+                <td style="${totalMom30d >= 0 ? 'color:#2563eb' : 'color:#e11d48'}">${totalMom30d > 0 ? '+' : ''}${totalMom30d.toLocaleString()}</td>
+                <td>${sumInWarehouse.toLocaleString()}</td>
+                <td style="color: #64748b;">${sumInTransit.toLocaleString()}</td>
+                <td>${sumTotalInventory.toLocaleString()}</td>
+                <td style="color: #059669;">${overallSellThrough.toFixed(1)}%</td>
+                <td>¥${avgCost.toFixed(1)}</td>
+                <td>¥${overallAvgPrice.toFixed(1)}</td>
+                <td>${overallAvgMarkup.toFixed(2)}x</td>
+                <td style="background-color: #e0e7ff !important; color: #3730a3;">${avgTargetMarkup.toFixed(2)}x</td>
+                <td style="background-color: #e0e7ff !important; color: #3730a3;">¥${Math.round(avgTargetPrice)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </body>
+        </html>
+      `;
+
+      // 采用隐藏高保真 iframe 打印调用，强制 Landscape，杜绝截断与页面卡死
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = '0';
+      document.body.appendChild(printFrame);
+
+      const frameDoc = printFrame.contentWindow.document;
+      frameDoc.open();
+      frameDoc.write(pdfHtml);
+      frameDoc.close();
+
+      setTimeout(() => {
+        try {
+          printFrame.contentWindow.focus();
+          printFrame.contentWindow.print();
+        } catch (err) {
+          console.warn('iframe 打印受阻，尝试新窗口调起:', err);
+          const win = window.open('', '_blank');
+          if (win) {
+            win.document.write(pdfHtml);
+            win.document.close();
+            win.focus();
+            setTimeout(() => win.print(), 300);
+          } else {
+            showToast('浏览器阻止了弹出窗口，请允许后重试', true);
+          }
+        }
+        setTimeout(() => {
+          if (document.body.contains(printFrame)) {
+            document.body.removeChild(printFrame);
+          }
+        }, 3000);
+      }, 400);
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      
+      toastMsg.innerText = msg;
+      toastIcon.className = isError ? 'text-rose-400' : 'text-emerald-400';
+      toast.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+      
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+      }, 3000);
+    }
+
+    // -------------------------------------------------------------
+    // 8.2 核心适销价、店铺/渠道表现看板与价格带计算引擎
+    // -------------------------------------------------------------
+    function refreshAnalysis() {
+      const filteredForSku = [];
+      for (let i = 0; i < rawDataset.length; i++) {
+        if (rawDataset[i].sku === currentSku) filteredForSku.push(rawDataset[i]);
+      }
+      if (filteredForSku.length === 0) return;
+
+      const first = filteredForSku[0];
+      const cost = first.cost || 50;
+
+      const skuImg = document.getElementById('skuImage');
+      if (skuImg) skuImg.src = first.img;
+      const skuBadge = document.getElementById('skuBadge');
+      if (skuBadge) skuBadge.innerText = currentSku;
+      const skuNameTag = document.getElementById('skuNameTag');
+      if (skuNameTag) skuNameTag.innerText = `${first.category || ''} · ${first.name || currentSku}`;
+      const txtCost = document.getElementById('txtCost');
+      if (txtCost) txtCost.innerText = cost.toFixed(2);
+
+      let dataset = filteredForSku;
+      if (currentStoreCategory !== 'ALL') {
+        dataset = dataset.filter(d => d.storeCategory === currentStoreCategory);
+      }
+      dataset = getFilteredDataByDate(dataset);
+
+      let sumSales = 0, sumRev = 0;
+      for (let i = 0; i < dataset.length; i++) {
+        sumSales += dataset[i].sales;
+        sumRev += dataset[i].revenue;
+      }
+      const currentAvgPrice = sumSales > 0 ? (sumRev / sumSales) : (first.price || cost * 2.4);
+
+      const txtAvg = document.getElementById('txtCurrentAvgPrice');
+      if (txtAvg) txtAvg.innerText = currentAvgPrice.toFixed(2);
+
+      // 渲染新板块：受日期切片与店铺归类影响的“不同渠道与店铺量利表现透视”
+      renderChannelAndStorePerformance();
+
+      // 渲染价格带量利分布与决策矩阵及大图展示模式
+      renderPriceBandSection(dataset, cost);
+      renderMatrixTable();
+      renderGalleryCards();
+    }
+
+    // 渲染不同渠道与不同店铺的销量、销额(万)、占比、件单价及倍率
+    function renderChannelAndStorePerformance() {
+      const channelTbody = document.getElementById('channelPerfTableBody');
+      const channelTfoot = document.getElementById('channelPerfTableFoot');
+      const dateRangeTag = document.getElementById('channelDateRangeTag');
+
+      if (!channelTbody) return;
+
+      if (dateRangeTag) {
+        dateRangeTag.innerText = `${startDateFilter || '起始'} ~ ${endDateFilter || '截止'}`;
+      }
+
+      // 根据分析范围筛选：当前分析款 vs 全款
+      let baseData = rawDataset;
+      if (channelSkuScope === 'CURRENT') {
+        baseData = baseData.filter(d => d.sku === currentSku);
+      }
+
+      // 受日期切片器影响
+      baseData = getFilteredDataByDate(baseData);
+
+      // 渠道聚合 Map
+      const channelMap = new Map();
+
+      let totalSalesAll = 0;
+      let totalRevAll = 0;
+      let totalCostAll = 0;
+
+      for (let i = 0; i < baseData.length; i++) {
+        const d = baseData[i];
+        const cat = d.storeCategory || '全渠道';
+        const c = d.cost || 0;
+        const costAmount = d.sales * c;
+
+        totalSalesAll += d.sales;
+        totalRevAll += d.revenue;
+        totalCostAll += costAmount;
+
+        // 渠道聚合
+        let ch = channelMap.get(cat);
+        if (!ch) {
+          ch = { category: cat, sales: 0, revenue: 0, costTotal: 0 };
+          channelMap.set(cat, ch);
+        }
+        ch.sales += d.sales;
+        ch.revenue += d.revenue;
+        ch.costTotal += costAmount;
+      }
+
+      // 1. 渲染不同渠道归类表格
+      const channelList = Array.from(channelMap.values()).sort((a, b) => b.revenue - a.revenue);
+      channelTbody.innerHTML = '';
+      channelTfoot.innerHTML = '';
+
+      if (channelList.length === 0) {
+        channelTbody.innerHTML = `<tr><td colspan="7" class="py-4 text-slate-400 text-center">当前日期范围内暂无销售记录</td></tr>`;
+      } else {
+        channelList.forEach(c => {
+          const revWan = (c.revenue / 10000).toFixed(2);
+          const salesShare = totalSalesAll > 0 ? (c.sales / totalSalesAll * 100).toFixed(1) : '0.0';
+          const revShare = totalRevAll > 0 ? (c.revenue / totalRevAll * 100).toFixed(1) : '0.0';
+          const avgPrice = c.sales > 0 ? (c.revenue / c.sales).toFixed(1) : '0.0';
+          const markup = c.costTotal > 0 ? (c.revenue / c.costTotal).toFixed(2) : '--';
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50/80 transition-colors';
+          tr.innerHTML = `
+            <td class="py-2 px-2 text-center font-bold text-slate-800">${c.category}</td>
+            <td class="py-2 px-2 text-center text-slate-800">${c.sales.toLocaleString()}</td>
+            <td class="py-2 px-2 text-center text-slate-500">${salesShare}%</td>
+            <td class="py-2 px-2 text-center font-semibold text-indigo-700">${revWan}万</td>
+            <td class="py-2 px-2 text-center text-slate-500">${revShare}%</td>
+            <td class="py-2 px-2 text-center text-slate-800">¥${avgPrice}</td>
+            <td class="py-2 px-2 text-center font-bold text-emerald-600">${markup}x</td>
+          `;
+          channelTbody.appendChild(tr);
+        });
+
+        // 渠道汇总行
+        const overallRevWan = (totalRevAll / 10000).toFixed(2);
+        const overallAvgPrice = totalSalesAll > 0 ? (totalRevAll / totalSalesAll).toFixed(1) : '0.0';
+        const overallMarkup = totalCostAll > 0 ? (totalRevAll / totalCostAll).toFixed(2) : '--';
+
+        channelTfoot.innerHTML = `
+          <tr class="py-2 bg-indigo-50/50">
+            <td class="py-2 px-2 text-center text-indigo-900 font-bold">渠道总计</td>
+            <td class="py-2 px-2 text-center text-slate-900">${totalSalesAll.toLocaleString()}</td>
+            <td class="py-2 px-2 text-center text-slate-600">100%</td>
+            <td class="py-2 px-2 text-center text-indigo-900 font-bold">${overallRevWan}万</td>
+            <td class="py-2 px-2 text-center text-slate-600">100%</td>
+            <td class="py-2 px-2 text-center text-slate-900">¥${overallAvgPrice}</td>
+            <td class="py-2 px-2 text-center text-emerald-700 font-bold">${overallMarkup}x</td>
+          </tr>
+        `;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 8.3 价格带量利分布与倍率图表渲染
+    // -------------------------------------------------------------
+    function renderPriceBandSection(dataset, cost) {
+      if (!dataset || dataset.length === 0) return;
+
+      const prices = [];
+      for (let i = 0; i < dataset.length; i++) {
+        if (dataset[i].price > 0) prices.push(dataset[i].price);
+      }
+      if (prices.length === 0) return;
+
+      const minP = safeMin(prices, 0);
+      const maxP = safeMax(prices, 0);
+      const range = maxP - minP;
+
+      let step = 50;
+      if (range <= 80) step = 10;
+      else if (range <= 200) step = 20;
+      else if (range <= 500) step = 50;
+      else step = 100;
+
+      const stepLabel = document.getElementById('priceBandStepLabel');
+      if (stepLabel) stepLabel.innerText = `区间步长: ¥${step}`;
+
+      const startBand = Math.floor(minP / step) * step;
+      const endBand = Math.ceil(maxP / step) * step;
+
+      const bands = [];
+      for (let b = startBand; b <= endBand; b += step) {
+        bands.push({
+          min: b,
+          max: b + step,
+          label: `¥${b}-${b + step}`,
+          sales: 0,
+          revenue: 0,
+          costTotal: 0
+        });
+      }
+
+      for (let i = 0; i < dataset.length; i++) {
+        const d = dataset[i];
+        for (let b = 0; b < bands.length; b++) {
+          const band = bands[b];
+          if (d.price >= band.min && d.price < band.max) {
+            band.sales += d.sales;
+            band.revenue += d.revenue;
+            band.costTotal += (d.sales * (d.cost || cost));
+            break;
+          }
+        }
+      }
+
+      const activeBands = bands.filter(b => b.sales > 0);
+      const labels = activeBands.map(b => b.label);
+      const profits = activeBands.map(b => Math.round(b.revenue - b.costTotal));
+      const salesArr = activeBands.map(b => b.sales);
+      const markups = activeBands.map(b => b.costTotal > 0 ? Number((b.revenue / b.costTotal).toFixed(2)) : 0);
+
+      let maxProfitBand = activeBands[0];
+      for (let b = 0; b < activeBands.length; b++) {
+        const item = activeBands[b];
+        const p = item.revenue - item.costTotal;
+        if (maxProfitBand && p > (maxProfitBand.revenue - maxProfitBand.costTotal)) {
+          maxProfitBand = item;
+        }
+      }
+
+      const dominantLabel = document.getElementById('dominantBandLabel');
+      if (dominantLabel) {
+        if (maxProfitBand) {
+          const pVal = Math.round(maxProfitBand.revenue - maxProfitBand.costTotal);
+          dominantLabel.innerText = `${maxProfitBand.label} (贡献毛利 ¥${pVal.toLocaleString()} / 销量 ${maxProfitBand.sales.toLocaleString()} 件)`;
+        } else {
+          dominantLabel.innerText = '--';
+        }
+      }
+
+      const canvas = document.getElementById('chartPriceBands');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (chartPriceBandsInstance) {
+        chartPriceBandsInstance.destroy();
+      }
+
+      chartPriceBandsInstance = new Chart(ctx, {
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: '价格带总毛利 (元)',
+              data: profits,
+              backgroundColor: 'rgba(99, 102, 241, 0.75)',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'bar',
+              label: '价格带销量 (件)',
+              data: salesArr,
+              backgroundColor: 'rgba(148, 163, 184, 0.45)',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'line',
+              label: '变现加权倍率 (x)',
+              data: markups,
+              borderColor: '#10b981',
+              backgroundColor: '#10b981',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: item => {
+                  if (item.datasetIndex === 0) return `总毛利: ¥${item.raw.toLocaleString()}`;
+                  if (item.datasetIndex === 1) return `销量: ${item.raw.toLocaleString()} 件`;
+                  return `变现倍率: ${item.raw}x`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: '毛利 / 销量 (金额/数量)', font: { size: 11 } },
+              grid: { color: '#f8fafc' }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: '倍率 (x)', font: { size: 11 } },
+              grid: { drawOnChartArea: false },
+              min: 1.0
+            }
+          }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 9. 系统启动自检与初始化
+    // -------------------------------------------------------------
+    // 8.3 价格带销量与倍率分布图表渲染 (仅展示销量与倍率，移除毛利额)
+    // -------------------------------------------------------------
+    function renderPriceBandSection(dataset, cost) {
+      if (!dataset || dataset.length === 0) return;
+
+      const prices = [];
+      for (let i = 0; i < dataset.length; i++) {
+        if (dataset[i].price > 0) prices.push(dataset[i].price);
+      }
+      if (prices.length === 0) return;
+
+      const minP = safeMin(prices, 0);
+      const maxP = safeMax(prices, 0);
+      const range = maxP - minP;
+
+      let step = 50;
+      if (range <= 80) step = 10;
+      else if (range <= 200) step = 20;
+      else if (range <= 500) step = 50;
+      else step = 100;
+
+      const stepLabel = document.getElementById('priceBandStepLabel');
+      if (stepLabel) stepLabel.innerText = `区间步长: ¥${step}`;
+
+      const startBand = Math.floor(minP / step) * step;
+      const endBand = Math.ceil(maxP / step) * step;
+
+      const bands = [];
+      for (let b = startBand; b <= endBand; b += step) {
+        bands.push({
+          min: b,
+          max: b + step,
+          label: `¥${b}-${b + step}`,
+          sales: 0,
+          revenue: 0,
+          costTotal: 0
+        });
+      }
+
+      for (let i = 0; i < dataset.length; i++) {
+        const d = dataset[i];
+        for (let b = 0; b < bands.length; b++) {
+          const band = bands[b];
+          if (d.price >= band.min && d.price < band.max) {
+            band.sales += d.sales;
+            band.revenue += d.revenue;
+            band.costTotal += (d.sales * (d.cost || cost));
+            break;
+          }
+        }
+      }
+
+      const activeBands = bands.filter(b => b.sales > 0);
+      const labels = activeBands.map(b => b.label);
+      const salesArr = activeBands.map(b => b.sales);
+      const markups = activeBands.map(b => b.costTotal > 0 ? Number((b.revenue / b.costTotal).toFixed(2)) : 0);
+
+      // 锁定最高走量价格带
+      let maxSalesBand = activeBands[0];
+      for (let b = 0; b < activeBands.length; b++) {
+        const item = activeBands[b];
+        if (maxSalesBand && item.sales > maxSalesBand.sales) {
+          maxSalesBand = item;
+        }
+      }
+
+      const dominantLabel = document.getElementById('dominantBandLabel');
+      if (dominantLabel) {
+        if (maxSalesBand) {
+          const mkp = maxSalesBand.costTotal > 0 ? (maxSalesBand.revenue / maxSalesBand.costTotal).toFixed(2) : '--';
+          dominantLabel.innerText = `${maxSalesBand.label} (销量 ${maxSalesBand.sales.toLocaleString()} 件 / 实际倍率 ${mkp}x)`;
+        } else {
+          dominantLabel.innerText = '--';
+        }
+      }
+
+      const canvas = document.getElementById('chartPriceBands');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (chartPriceBandsInstance) {
+        chartPriceBandsInstance.destroy();
+      }
+
+      chartPriceBandsInstance = new Chart(ctx, {
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: '价格带销量 (件)',
+              data: salesArr,
+              backgroundColor: 'rgba(99, 102, 241, 0.75)',
+              hoverBackgroundColor: '#4f46e5',
+              borderRadius: 6,
+              yAxisID: 'y'
+            },
+            {
+              type: 'line',
+              label: '变现加权倍率 (x)',
+              data: markups,
+              borderColor: '#10b981',
+              backgroundColor: '#10b981',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: item => {
+                  if (item.datasetIndex === 0) return `销量: ${item.raw.toLocaleString()} 件`;
+                  return `变现倍率: ${item.raw}x`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: '销量 (件)', font: { size: 11 } },
+              grid: { color: '#f8fafc' }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: '倍率 (x)', font: { size: 11 } },
+              grid: { drawOnChartArea: false },
+              min: 1.0
+            }
+          }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 9. 系统启动自检与初始化
+    // -------------------------------------------------------------
+    window.onload = function() {
+      initDataFromPreset();
+      initDatePickers(rawDataset);
+      updateDropdowns();
+      renderMultiFilterDropdowns();
+      initEventHandlers();
+      refreshAnalysis();
+    };
+  </script>
+</body>
+</html>
