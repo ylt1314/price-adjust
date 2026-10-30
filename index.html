@@ -627,30 +627,57 @@
         </div>
       </div>
 
-      <!-- 渠道归类销量与成交均价结构表 -->
+      <!-- 渠道归类销量与成交均价结构表 (新增近7天/近30天销量及环比绝对值，支持表头自主排序) -->
       <div class="mt-4 pt-3 border-t border-slate-100">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
             <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             <span>渠道归类表现 (各渠道销量与成交均价)</span>
           </span>
-          <span class="text-[11px] text-slate-400">当前筛选周期内核算</span>
+          <span class="text-[11px] text-slate-400">点击列标题可自主排序 · 当前筛选周期内核算</span>
         </div>
         <div class="overflow-x-auto border border-slate-200 rounded-xl">
-          <table class="w-full text-xs text-left">
-            <thead class="bg-slate-50 text-[11px] text-slate-500 font-semibold border-b border-slate-200">
+          <table class="w-full text-xs text-center">
+            <thead class="bg-slate-100 text-[11px] text-slate-900 font-extrabold border-b border-slate-200 select-none">
               <tr>
-                <th class="py-2.5 px-3">渠道归类</th>
-                <th class="py-2.5 px-3 text-right">销量 (件)</th>
-                <th class="py-2.5 px-3 text-right">销量占比</th>
-                <th class="py-2.5 px-3 text-right">销额 (万元)</th>
-                <th class="py-2.5 px-3 text-right font-bold text-indigo-700">成交均价</th>
-                <th class="py-2.5 px-3 text-right">变现倍率</th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="category">
+                  <span>渠道归类</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="sales">
+                  <span>销量 (件)</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="salesShare">
+                  <span>销量占比</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="sales7d">
+                  <span>近7天销量</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="wow7d">
+                  <span>7天环比</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="sales30d">
+                  <span>近30天销量</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="mom30d">
+                  <span>30天环比</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="revenue">
+                  <span>销额 (万元)</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors font-bold text-indigo-700" data-key="avgPrice">
+                  <span>成交均价</span><span class="modal-ch-sort-icon ml-1 text-indigo-500 font-mono text-[10px]">⇅</span>
+                </th>
+                <th class="modal-ch-th py-2.5 px-3 text-center cursor-pointer hover:bg-slate-200 transition-colors" data-key="markup">
+                  <span>变现倍率</span><span class="modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]">⇅</span>
+                </th>
               </tr>
             </thead>
-            <tbody id="modalChannelTableBody" class="divide-y divide-slate-100 font-mono">
+            <tbody id="modalChannelTableBody" class="divide-y divide-slate-100 font-mono text-center">
               <!-- 动态填充渠道数据行 -->
             </tbody>
+            <tfoot id="modalChannelTableFoot" class="bg-slate-50 font-bold border-t border-slate-200 text-slate-800 font-mono text-[11px] text-center">
+              <!-- 渠道汇总行 -->
+            </tfoot>
           </table>
         </div>
       </div>
@@ -723,6 +750,12 @@
     // 总库存条件筛选状态
     let invFilterOp = 'gte';
     let invFilterVal = null;
+
+    // 弹窗内渠道归类表格独立状态与自主排序
+    let modalChannelData = [];
+    let modalChannelTotals = null;
+    let modalChannelSortCol = 'sales';
+    let modalChannelSortOrder = 'desc';
 
     // 单款独立微调覆盖字典 (sku -> markup)，未单独修改的款继承 selectedTargetMarkup
     const skuCustomMarkupMap = {};
@@ -1940,47 +1973,207 @@
 
       // 2. 渠道归类销量与成交均价明细核算
       const channelMap = new Map();
-      skuRows.forEach(r => {
+
+      // 计算弹窗所属 SKU 的全局时效窗口（对应全局日期筛选或最新日期）
+      let globalMaxTime = 0;
+      if (endDateFilter) {
+        const t = new Date(endDateFilter).getTime();
+        if (!isNaN(t)) globalMaxTime = t;
+      }
+      if (!globalMaxTime) {
+        for (let i = 0; i < allSkuRows.length; i++) {
+          if (allSkuRows[i].time > globalMaxTime) globalMaxTime = allSkuRows[i].time;
+        }
+      }
+      if (!globalMaxTime) globalMaxTime = Date.now();
+
+      const ONE_DAY_MS = 86400000;
+      const t7Start = globalMaxTime - 6 * ONE_DAY_MS;
+      const prev7Start = globalMaxTime - 13 * ONE_DAY_MS;
+      const prev7End = globalMaxTime - 7 * ONE_DAY_MS;
+      const t30Start = globalMaxTime - 29 * ONE_DAY_MS;
+      const prev30Start = globalMaxTime - 59 * ONE_DAY_MS;
+      const prev30End = globalMaxTime - 30 * ONE_DAY_MS;
+
+      const hasDateFilter = Boolean(startDateFilter || endDateFilter);
+
+      // 单遍汇总各渠道明细（累计、7天、30天及对应环比基期）
+      allSkuRows.forEach(r => {
         const cat = r.storeCategory || '全渠道';
         let c = channelMap.get(cat);
         if (!c) {
-          c = { category: cat, sales: 0, revenue: 0 };
+          c = {
+            category: cat,
+            sales: 0,
+            revenue: 0,
+            costTotal: 0,
+            sales7d: 0,
+            prevSales7d: 0,
+            sales30d: 0,
+            prevSales30d: 0
+          };
           channelMap.set(cat, c);
         }
-        c.sales += r.sales;
-        c.revenue += r.revenue;
+
+        const t = r.time || (new Date(r.date).getTime()) || 0;
+        if (t >= t7Start && t <= globalMaxTime) c.sales7d += r.sales;
+        else if (t >= prev7Start && t <= prev7End) c.prevSales7d += r.sales;
+
+        if (t >= t30Start && t <= globalMaxTime) c.sales30d += r.sales;
+        else if (t >= prev30Start && t <= prev30End) c.prevSales30d += r.sales;
+
+        if (!hasDateFilter || ((!startDateFilter || r.date >= startDateFilter) && (!endDateFilter || r.date <= endDateFilter))) {
+          c.sales += r.sales;
+          c.revenue += r.revenue;
+          c.costTotal += r.sales * (first.cost || r.cost || 0);
+        }
       });
 
-      const channelRows = Array.from(channelMap.values()).sort((a, b) => b.sales - a.sales);
-      const channelTbody = document.getElementById('modalChannelTableBody');
-      channelTbody.innerHTML = '';
+      let sumChSales = 0, sumChRev = 0, sumChCost = 0;
+      let sumCh7d = 0, sumChPrev7d = 0, sumCh30d = 0, sumChPrev30d = 0;
 
-      if (channelRows.length === 0) {
-        channelTbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-slate-400">当前日期范围内暂无渠道数据</td></tr>`;
-      } else {
-        channelRows.forEach(c => {
-          const chAvgPrice = c.sales > 0 ? (c.revenue / c.sales) : 0;
-          const chShare = totalSales > 0 ? (c.sales / totalSales * 100) : 0;
-          const chMarkup = first.cost > 0 ? (chAvgPrice / first.cost) : 0;
-          const revWan = (c.revenue / 10000).toFixed(1);
-          const tr = document.createElement('tr');
-          tr.className = 'hover:bg-slate-50 transition-colors';
-          tr.innerHTML = `
-            <td class="py-2.5 px-3 font-semibold text-slate-700">${c.category}</td>
-            <td class="py-2.5 px-3 text-right text-slate-800">${c.sales.toLocaleString()}</td>
-            <td class="py-2.5 px-3 text-right text-slate-500">${chShare.toFixed(1)}%</td>
-            <td class="py-2.5 px-3 text-right text-slate-800 font-bold">${revWan}万</td>
-            <td class="py-2.5 px-3 text-right font-bold text-indigo-700">¥${chAvgPrice.toFixed(1)}</td>
-            <td class="py-2.5 px-3 text-right text-slate-600">${chMarkup.toFixed(2)}x</td>
-          `;
-          channelTbody.appendChild(tr);
-        });
-      }
+      modalChannelData = Array.from(channelMap.values()).map(c => {
+        const wow7d = c.sales7d - c.prevSales7d;
+        const mom30d = c.sales30d - c.prevSales30d;
+        const avgPrice = c.sales > 0 ? (c.revenue / c.sales) : 0;
+        const markup = c.costTotal > 0 ? (c.revenue / c.costTotal) : (first.cost > 0 && avgPrice > 0 ? (avgPrice / first.cost) : 0);
+        const revenueWan = Number((c.revenue / 10000).toFixed(1));
+        const salesShare = totalSales > 0 ? Number((c.sales / totalSales * 100).toFixed(1)) : 0;
+
+        sumChSales += c.sales;
+        sumChRev += c.revenue;
+        sumChCost += c.costTotal;
+        sumCh7d += c.sales7d;
+        sumChPrev7d += c.prevSales7d;
+        sumCh30d += c.sales30d;
+        sumChPrev30d += c.prevSales30d;
+
+        return {
+          category: c.category,
+          sales: c.sales,
+          salesShare,
+          sales7d: c.sales7d,
+          prevSales7d: c.prevSales7d,
+          wow7d,
+          sales30d: c.sales30d,
+          prevSales30d: c.prevSales30d,
+          mom30d,
+          revenue: c.revenue,
+          revenueWan,
+          avgPrice,
+          markup
+        };
+      });
+
+      const totAvgPrice = sumChSales > 0 ? (sumChRev / sumChSales) : 0;
+      const totMarkup = sumChCost > 0 ? (sumChRev / sumChCost) : (first.cost > 0 && totAvgPrice > 0 ? (totAvgPrice / first.cost) : 0);
+
+      modalChannelTotals = {
+        sales: sumChSales,
+        sales7d: sumCh7d,
+        prevSales7d: sumChPrev7d,
+        wow7d: sumCh7d - sumChPrev7d,
+        sales30d: sumCh30d,
+        prevSales30d: sumChPrev30d,
+        mom30d: sumCh30d - sumChPrev30d,
+        revenueWan: Number((sumChRev / 10000).toFixed(1)),
+        avgPrice: totAvgPrice,
+        markup: totMarkup
+      };
+
+      // 默认按销量降序排列并渲染
+      modalChannelSortCol = 'sales';
+      modalChannelSortOrder = 'desc';
+      renderModalChannelTable();
 
       const modal = document.getElementById('skuTrendModal');
       const modalCard = document.getElementById('skuTrendModalCard');
       modal.classList.remove('opacity-0', 'pointer-events-none');
       modalCard.classList.remove('scale-95');
+    }
+
+    // 渲染弹窗内渠道归类表格（支持任意列自主排序与汇总）
+    function renderModalChannelTable() {
+      const tbody = document.getElementById('modalChannelTableBody');
+      const tfoot = document.getElementById('modalChannelTableFoot');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (tfoot) tfoot.innerHTML = '';
+
+      // 更新表头排序状态指示
+      document.querySelectorAll('.modal-ch-th').forEach(th => {
+        const k = th.dataset.key;
+        const icon = th.querySelector('.modal-ch-sort-icon');
+        if (icon) {
+          if (modalChannelSortCol === k) {
+            icon.innerText = modalChannelSortOrder === 'asc' ? ' ▲' : ' ▼';
+            icon.className = 'modal-ch-sort-icon ml-1 text-indigo-600 font-bold text-[11px]';
+          } else {
+            icon.innerText = ' ⇅';
+            icon.className = 'modal-ch-sort-icon ml-1 text-slate-400 font-mono text-[10px]';
+          }
+        }
+      });
+
+      if (!modalChannelData || modalChannelData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400">当前日期范围内暂无渠道数据</td></tr>`;
+        return;
+      }
+
+      // 根据当前排序列和升降序进行排序
+      const sorted = [...modalChannelData].sort((a, b) => {
+        let valA = a[modalChannelSortCol];
+        let valB = b[modalChannelSortCol];
+        if (typeof valA === 'string') {
+          return modalChannelSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        }
+        valA = valA || 0;
+        valB = valB || 0;
+        return modalChannelSortOrder === 'asc' ? valA - valB : valB - valA;
+      });
+
+      const renderTrend = (val) => {
+        if (val > 0) return `<span class="text-blue-600 font-bold font-mono">+${val.toLocaleString()}</span>`;
+        if (val < 0) return `<span class="text-rose-600 font-bold font-mono">${val.toLocaleString()}</span>`;
+        return `<span class="text-slate-400 font-mono">0</span>`;
+      };
+
+      sorted.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors text-center';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-semibold text-slate-800 text-center">${c.category}</td>
+          <td class="py-2.5 px-3 text-center text-slate-900 font-bold">${c.sales.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-center text-slate-500">${c.salesShare.toFixed(1)}%</td>
+          <td class="py-2.5 px-3 text-center text-slate-800">${c.sales7d.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-center">${renderTrend(c.wow7d)}</td>
+          <td class="py-2.5 px-3 text-center text-slate-800">${c.sales30d.toLocaleString()}</td>
+          <td class="py-2.5 px-3 text-center">${renderTrend(c.mom30d)}</td>
+          <td class="py-2.5 px-3 text-center text-slate-800 font-bold">${c.revenueWan}万</td>
+          <td class="py-2.5 px-3 text-center font-bold text-indigo-700">¥${c.avgPrice.toFixed(1)}</td>
+          <td class="py-2.5 px-3 text-center text-slate-700">${c.markup > 0 ? c.markup.toFixed(2) + 'x' : '--'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 渲染汇总行
+      if (tfoot && modalChannelTotals) {
+        const tot = modalChannelTotals;
+        tfoot.innerHTML = `
+          <tr class="py-2.5 bg-slate-100/90 font-bold border-t-2 border-slate-300">
+            <td class="py-2.5 px-3 text-center text-slate-900 font-extrabold">渠道总计</td>
+            <td class="py-2.5 px-3 text-center text-indigo-900 font-extrabold">${tot.sales.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-center text-slate-600">100%</td>
+            <td class="py-2.5 px-3 text-center text-slate-900 font-bold">${tot.sales7d.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-center">${renderTrend(tot.wow7d)}</td>
+            <td class="py-2.5 px-3 text-center text-slate-900 font-bold">${tot.sales30d.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-center">${renderTrend(tot.mom30d)}</td>
+            <td class="py-2.5 px-3 text-center text-indigo-900 font-bold">${tot.revenueWan}万</td>
+            <td class="py-2.5 px-3 text-center text-indigo-700 font-bold">¥${tot.avgPrice.toFixed(1)}</td>
+            <td class="py-2.5 px-3 text-center text-emerald-700 font-bold">${tot.markup > 0 ? tot.markup.toFixed(2) + 'x' : '--'}</td>
+          </tr>
+        `;
+      }
     }
 
     function closeSkuTrendModal() {
@@ -2487,6 +2680,21 @@
       document.getElementById('btnCloseModalBottom').addEventListener('click', closeSkuTrendModal);
       document.getElementById('skuTrendModal').addEventListener('click', (e) => {
         if (e.target.id === 'skuTrendModal') closeSkuTrendModal();
+      });
+
+      // 绑定弹窗渠道归类表头自主点击排序事件
+      document.querySelectorAll('.modal-ch-th').forEach(th => {
+        th.addEventListener('click', () => {
+          const k = th.dataset.key;
+          if (!k) return;
+          if (modalChannelSortCol === k) {
+            modalChannelSortOrder = (modalChannelSortOrder === 'asc' ? 'desc' : 'asc');
+          } else {
+            modalChannelSortCol = k;
+            modalChannelSortOrder = 'desc';
+          }
+          renderModalChannelTable();
+        });
       });
 
       // 绑定图片放大预览关闭事件
